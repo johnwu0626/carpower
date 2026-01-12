@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV 最佳充電站導航</title>
+    <!-- 引入 Tailwind CSS 進行快速切版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示庫 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 自定義動畫 */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #10B981;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+    <!-- 頂部導航列 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-charging-station text-green-500 mr-2"></i>EV 充電神探
+            </h1>
+            <div class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <i class="fas fa-wifi mr-1"></i>線上
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="max-w-md mx-auto px-4 py-6 pb-20">
+        
+        <!-- 狀態面板 -->
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-6 text-center">
+            <p class="text-sm opacity-90 mb-1">目前位置狀態</p>
+            <h2 id="status-text" class="text-2xl font-bold mb-4">準備就緒</h2>
+            
+            <button id="locate-btn" onclick="startLocationProcess()" 
+                class="bg-white text-green-600 hover:bg-green-50 font-bold py-3 px-8 rounded-full shadow-md transition transform hover:scale-105 active:scale-95 w-full flex items-center justify-center gap-2">
+                <i class="fas fa-location-arrow"></i> 搜尋附近充電站
+            </button>
+            
+            <!-- 錯誤訊息容器 -->
+            <div id="error-container" class="hidden mt-4 bg-red-500/20 rounded-lg p-3 backdrop-blur-sm border border-red-200/30">
+                <p id="error-msg" class="text-white text-sm font-medium mb-2"></p>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="useDefaultLocation()" class="text-xs bg-white text-red-600 px-3 py-1 rounded shadow hover:bg-gray-100 transition">
+                        <i class="fas fa-map-pin mr-1"></i> 強制使用預設位置
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果列表容器 -->
+        <div id="result-container" class="space-y-4 hidden">
+            <div class="flex justify-between items-center px-1">
+                <h3 class="font-bold text-gray-700">推薦站點 (依距離排序)</h3>
+                <span class="text-xs text-gray-500">來源: 模擬數據</span>
+            </div>
+            
+            <!-- 這裡將由 JS 動態插入卡片 -->
+            <div id="station-list"></div>
+        </div>
+
+        <!-- 初始畫面指引 -->
+        <div id="empty-state" class="text-center py-10 text-gray-400">
+            <i class="fas fa-map-marked-alt text-6xl mb-4 text-gray-300"></i>
+            <p>點擊上方按鈕<br>找出各時段最佳充電站</p>
+        </div>
+
+    </main>
+
+    <script>
+        /**
+         * 模擬資料庫：充電站品牌與費率範本
+         */
+        const MOCK_BRANDS = [
+            { name: "EVOASIS 超充站", basePrice: 8.4, peakPrice: 10.5, type: "DC 180kW" },
+            { name: "U-POWER 極速充電", basePrice: 9.0, peakPrice: 11.0, type: "DC 360kW" },
+            { name: "特爾電力 TAIL", basePrice: 9.5, peakPrice: 12.0, type: "DC 200kW" },
+            { name: "EVALUE 華城", basePrice: 8.0, peakPrice: 10.0, type: "DC 120kW" },
+            { name: "公有停車場慢充", basePrice: 7.5, peakPrice: 7.5, type: "AC 7kW" }
+        ];
+
+        /**
+         * 核心功能 1: 啟動定位流程
+         */
+        function startLocationProcess() {
+            const btn = document.getElementById('locate-btn');
+            const statusText = document.getElementById('status-text');
+            const errorContainer = document.getElementById('error-container');
+            
+            // UI 狀態更新：讀取中
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> 定位中...';
+            statusText.innerText = "正在取得 GPS...";
+            errorContainer.classList.add('hidden');
+
+            if (!navigator.geolocation) {
+                handleError("此瀏覽器不支援定位");
+                return;
+            }
+
+            /**
+             * iOS 優化設定：
+             * 1. enableHighAccuracy: false (改用 WiFi/基地台定位，速度快且不易失敗)
+             * 2. timeout: 15000 (延長等待至 15秒)
+             * 3. maximumAge: 60000 (接受 1 分鐘內的舊位置，不用每次都重抓)
+             */
+            const options = {
+                enableHighAccuracy: false, 
+                timeout: 15000,
+                maximumAge: 60000
+            };
+
+            // 呼叫瀏覽器 Geolocation API
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    // 成功取得位置
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    statusText.innerText = "已鎖定位置";
+                    generateAndRenderStations(userLat, userLng);
+                    
+                    // UI 恢復
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> 重新搜尋';
+                    btn.disabled = false;
+                },
+                (error) => {
+                    // 定位失敗處理
+                    let msg = `定位失敗 (代碼:${error.code})`;
+                    
+                    // 針對常見錯誤給予白話文建議
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED: // code 1
+                            msg = "定位權限被網站拒絕。請重整網頁或檢查網址列左側設定。"; 
+                            break;
+                        case error.POSITION_UNAVAILABLE: // code 2
+                            msg = "無法偵測位置 (訊號弱)。請確認 WiFi 是否開啟。"; 
+                            break;
+                        case error.TIMEOUT: // code 3
+                            msg = "定位回應逾時。"; 
+                            break;
+                    }
+                    handleError(msg);
+                },
+                options
+            );
+        }
+
+        /**
+         * 備案功能：使用預設位置 (蘆洲)
+         */
+        function useDefaultLocation() {
+            const btn = document.getElementById('locate-btn');
+            const statusText = document.getElementById('status-text');
+            const errorContainer = document.getElementById('error-container');
+
+            errorContainer.classList.add('hidden');
+            statusText.innerText = "使用預設位置 (蘆洲)";
+            
+            // 蘆洲區概略座標
+            const defaultLat = 25.08;
+            const defaultLng = 121.47;
+            
+            generateAndRenderStations(defaultLat, defaultLng);
+            
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> 重新搜尋';
+            btn.disabled = false;
+        }
+
+        /**
+         * 錯誤處理 UI
+         */
+        function handleError(msg) {
+            const btn = document.getElementById('locate-btn');
+            const statusText = document.getElementById('status-text');
+            const errorContainer = document.getElementById('error-container');
+            const errorMsg = document.getElementById('error-msg');
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-location-arrow"></i> 再試一次';
+            statusText.innerText = "定位失敗";
+            
+            errorMsg.innerText = msg;
+            errorContainer.classList.remove('hidden'); // 顯示錯誤區塊與備用按鈕
+        }
+
+        /**
+         * 核心功能 2 & 3: 生成數據並計算距離
+         */
+        function generateAndRenderStations(userLat, userLng) {
+            // 隱藏初始畫面，顯示列表
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('result-container').classList.remove('hidden');
+            
+            const listContainer = document.getElementById('station-list');
+            listContainer.innerHTML = ''; // 清空舊資料
+
+            // 產生 5 個模擬站點 (在使用者周圍 0.5 ~ 5 公里內隨機分佈)
+            let stations = [];
+            for (let i = 0; i < 5; i++) {
+                const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
+                
+                // 隨機偏移座標 (約 0.01 度 ~= 1.11 公里)
+                const offsetLat = (Math.random() - 0.5) * 0.04; 
+                const offsetLng = (Math.random() - 0.5) * 0.04;
+                
+                stations.push({
+                    id: i,
+                    name: `${brand.name} (站點 ${String.fromCharCode(65+i)})`,
+                    lat: userLat + offsetLat,
+                    lng: userLng + offsetLng,
+                    price: brand.basePrice,
+                    type: brand.type,
+                    brandType: brand.name.includes("公有") ? "slow" : "fast"
+                });
+            }
+
+            // 計算距離並排序
+            stations.forEach(station => {
+                station.distance = calculateHaversineDistance(userLat, userLng, station.lat, station.lng);
+            });
+            
+            // 依照距離由近到遠排序
+            stations.sort((a, b) => a.distance - b.distance);
+
+            // 渲染卡片
+            stations.forEach((station, index) => {
+                const card = createStationCard(station, index);
+                listContainer.appendChild(card);
+            });
+        }
+
+        /**
+         * 輔助函式：計算兩點間的直線距離 (Haversine Formula)
+         */
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // 地球半徑 (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return (R * c).toFixed(1);
+        }
+
+        /**
+         * UI 產生器：建立單個充電站卡片 HTML
+         */
+        function createStationCard(station, index) {
+            const div = document.createElement('div');
+            div.className = "bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 border border-gray-100 fade-in";
+            div.style.animationDelay = `${index * 0.1}s`;
+
+            // 判斷樣式
+            const iconClass = station.brandType === 'fast' 
+                ? 'bg-orange-100 text-orange-600' 
+                : 'bg-blue-100 text-blue-600';
+            const icon = station.brandType === 'fast' ? 'fa-bolt' : 'fa-plug';
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex gap-3">
+                        <div class="w-10 h-10 rounded-lg ${iconClass} flex items-center justify-center flex-shrink-0">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800 leading-tight">${station.name}</h4>
+                            <div class="text-sm text-gray-500 mt-1">
+                                <span class="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium">${station.type}</span>
+                                <span class="ml-2"><i class="fas fa-map-marker-alt text-gray-400"></i> ${station.distance} km</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xl font-bold text-green-600">$${station.price}</div>
+                        <div class="text-xs text-gray-400">/度 (kWh)</div>
+                    </div>
+                </div>
+
+                <div class="mt-2 pt-3 border-t border-gray-100 flex gap-2">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}" 
+                       target="_blank"
+                       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
+                        <i class="fas fa-location-arrow"></i> 立即導航
+                    </a>
+                </div>
+            `;
+            return div;
+        }
+    </script>
+</body>
+</html>
