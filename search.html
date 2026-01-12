@@ -101,6 +101,15 @@
         ];
 
         /**
+         * 模擬地址資料庫 (用於生成擬真地址)
+         */
+        const MOCK_STREETS = [
+            "中正路", "中山路", "復興路", "三民路", "民族路", 
+            "文化路", "大業路", "信義路", "和平東路", "建國北路",
+            "長安街", "集賢路", "三和路", "光復路"
+        ];
+
+        /**
          * 核心功能 1: 啟動定位流程
          */
         function startLocationProcess() {
@@ -225,6 +234,11 @@
                 const offsetLat = (Math.random() - 0.5) * 0.04; 
                 const offsetLng = (Math.random() - 0.5) * 0.04;
                 
+                // 隨機生成地址 - 已更新為完整格式
+                const street = MOCK_STREETS[Math.floor(Math.random() * MOCK_STREETS.length)];
+                const num = Math.floor(Math.random() * 300) + 1;
+                const section = Math.random() > 0.5 ? `${Math.floor(Math.random()*3)+1}段` : "";
+                
                 stations.push({
                     id: i,
                     name: `${brand.name} (站點 ${String.fromCharCode(65+i)})`,
@@ -232,7 +246,9 @@
                     lng: userLng + offsetLng,
                     price: brand.basePrice,
                     type: brand.type,
-                    brandType: brand.name.includes("公有") ? "slow" : "fast"
+                    brandType: brand.name.includes("公有") ? "slow" : "fast",
+                    // 格式：新北市蘆洲區 + 路名 + 段 + 號
+                    address: `新北市蘆洲區${street}${section}${num}號`
                 });
             }
 
@@ -297,6 +313,12 @@
                         <div class="text-xl font-bold text-green-600">$${station.price}</div>
                         <div class="text-xs text-gray-400">/度 (kWh)</div>
                     </div>
+                </div>
+
+                <!-- 地址顯示區域 (已更新格式) -->
+                <div class="text-sm text-gray-600 mt-2 flex items-center px-1">
+                    <i class="fas fa-map-pin w-5 text-center mr-1 text-red-400"></i>
+                    <span class="truncate">${station.address}</span>
                 </div>
 
                 <div class="mt-2 pt-3 border-t border-gray-100 flex gap-2">
