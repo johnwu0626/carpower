@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>景點探索導航 | Travel Tech Demo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s ease-in-out;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="map" class="text-blue-600 w-6 h-6"></i>
+                <h1 class="text-xl font-bold text-gray-800">景點探索導航</h1>
+            </div>
+            <div id="gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...
+            </div>
+        </div>
+    </header>
+
+    <!-- Controls & Filters -->
+    <section class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Radius Filter -->
+                <div class="flex flex-col space-y-2">
+                    <label class="text-sm font-semibold text-gray-700 flex justify-between">
+                        <span>搜尋半徑 (公里)</span>
+                        <span id="radius-val" class="text-blue-600">5 km</span>
+                    </label>
+                    <input type="range" id="radius-input" min="1" max="30" value="5" step="1" 
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span>1km</span>
+                        <span>30km</span>
+                    </div>
+                </div>
+
+                <!-- Rating Filter -->
+                <div class="flex flex-col space-y-2">
+                    <label class="text-sm font-semibold text-gray-700">最低 Google 評分</label>
+                    <select id="rating-input" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="3.8">⭐ 3.8 以上</option>
+                        <option value="4.0">⭐ 4.0 以上</option>
+                        <option value="4.2">⭐ 4.2 以上</option>
+                        <option value="4.5">⭐ 4.5 以上</option>
+                    </select>
+                </div>
+
+                <!-- Action -->
+                <div class="flex items-end">
+                    <button onclick="app.refreshLocation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 transform">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> 更新位置與搜尋
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Column 1: Paid Attractions -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center space-x-2 pb-2 border-b-2 border-amber-400">
+                    <div class="p-2 bg-amber-100 rounded-lg text-amber-600">
+                        <i data-lucide="ticket" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">付費探索</h2>
+                        <p class="text-xs text-gray-500">博物館、展覽、遊樂園</p>
+                    </div>
+                    <span id="count-paid" class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </div>
+                <div id="list-paid" class="space-y-4 min-h-[200px]">
+                    <!-- JS will inject cards here -->
+                </div>
+            </div>
+
+            <!-- Column 2: Free Spots -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center space-x-2 pb-2 border-b-2 border-emerald-400">
+                    <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                        <i data-lucide="trees" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">免費漫遊</h2>
+                        <p class="text-xs text-gray-500">公園、地標、自然景觀</p>
+                    </div>
+                    <span id="count-free" class="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </div>
+                <div id="list-free" class="space-y-4 min-h-[200px]">
+                    <!-- JS will inject cards here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Empty State Template (Hidden) -->
+        <div id="empty-state" class="hidden text-center py-10 text-gray-400">
+            <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+            <p>此範圍內沒有符合條件的景點</p>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 SmartTravel Tech Demo. 此為演示應用，數據為模擬生成。</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Mock Data Generation (模擬資料庫) ---
+        // 為了演示效果，我們產生圍繞在 "台北車站" (25.0478, 121.5170) 周圍的數據
+        // 但這些數據會根據與使用者的相對距離進行計算
+        
+        const MOCK_BASE_LAT = 25.0478;
+        const MOCK_BASE_LNG = 121.5170;
+
+        const POI_DATABASE = [
+            // Paid Attractions
+            { id: 1, name: "當代藝術館", rating: 4.3, type: "美術館", isPaid: true, price: "$100 TWD", address: "台北市大同區長安西路39號", lat: 25.0504, lng: 121.5186 },
+            { id: 2, name: "天文科學教育館", rating: 4.5, type: "博物館", isPaid: true, price: "$40 TWD", address: "台北市士林區基河路363號", lat: 25.0963, lng: 121.5168 },
+            { id: 3, name: "兒童新樂園", rating: 4.4, type: "遊樂園", isPaid: true, price: "$30 TWD 起", address: "台北市士林區承德路五段55號", lat: 25.0975, lng: 121.5147 },
+            { id: 4, name: "101 觀景台", rating: 4.6, type: "地標", isPaid: true, price: "$600 TWD", address: "台北市信義區信義路五段7號89樓", lat: 25.0339, lng: 121.5644 },
+            { id: 5, name: "袖珍博物館", rating: 4.2, type: "博物館", isPaid: true, price: "$250 TWD", address: "台北市中山區建國北路一段96號B1", lat: 25.0507, lng: 121.5363 },
+            { id: 6, name: "故宮博物院", rating: 4.7, type: "博物館", isPaid: true, price: "$350 TWD", address: "台北市士林區至善路二段221號", lat: 25.1020, lng: 121.5486 },
+            { id: 7, name: "美麗華摩天輪", rating: 4.1, type: "娛樂", isPaid: true, price: "$200 TWD", address: "台北市中山區敬業三路20號", lat: 25.0835, lng: 121.5574 },
+            { id: 8, name: "動物園", rating: 4.5, type: "動物園", isPaid: true, price: "$60 TWD", address: "台北市文山區新光路二段30號", lat: 24.9983, lng: 121.5811 },
+            { id: 9, name: "北投溫泉博物館", rating: 4.4, type: "博物館", isPaid: true, price: "自由捐獻/部分收費", address: "台北市北投區中山路2號", lat: 25.1365, lng: 121.5065 },
+            { id: 10, name: "華山1914特展", rating: 4.0, type: "展覽", isPaid: true, price: "視展覽而定", address: "台北市中正區八德路一段1號", lat: 25.0441, lng: 121.5293 },
+            
+            // Free Spots
+            { id: 11, name: "大安森林公園", rating: 4.6, type: "公園", isPaid: false, price: "免費", address: "台北市大安區新生南路二段1號", lat: 25.0300, lng: 121.5360 },
+            { id: 12, name: "中正紀念堂", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市中正區中山南路21號", lat: 25.0354, lng: 121.5197 },
+            { id: 13, name: "象山親山步道", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市信義區信義路五段150巷", lat: 25.0270, lng: 121.5707 },
+            { id: 14, name: "行天宮", rating: 4.7, type: "寺廟", isPaid: false, price: "免費", address: "台北市中山區民權東路二段109號", lat: 25.0631, lng: 121.5338 },
+            { id: 15, name: "松山文創園區", rating: 4.4, type: "文創園區", isPaid: false, price: "免費入場", address: "台北市信義區光復南路133號", lat: 25.0437, lng: 121.5606 },
+            { id: 16, name: "四四南村", rating: 4.2, type: "歷史遺跡", isPaid: false, price: "免費", address: "台北市信義區松勤街50號", lat: 25.0312, lng: 121.5619 },
+            { id: 17, name: "碧潭風景區", rating: 4.3, type: "自然景觀", isPaid: false, price: "免費", address: "新北市新店區新店路", lat: 24.9575, lng: 121.5372 },
+            { id: 18, name: "饒河街觀光夜市", rating: 4.1, type: "夜市", isPaid: false, price: "免費入場", address: "台北市松山區饒河街", lat: 25.0509, lng: 121.5775 },
+            { id: 19, name: "大湖公園", rating: 4.5, type: "公園", isPaid: false, price: "免費", address: "台北市內湖區成功路五段31號", lat: 25.0838, lng: 121.6022 },
+            { id: 20, name: "剝皮寮歷史街區", rating: 4.3, type: "歷史遺跡", isPaid: false, price: "免費", address: "台北市萬華區康定路173巷", lat: 25.0366, lng: 121.5022 },
+            // Random far away points to test filter
+            { id: 21, name: "九份老街", rating: 4.4, type: "老街", isPaid: false, price: "免費入場", address: "新北市瑞芳區基山街", lat: 25.1099, lng: 121.8452 }, // Far
+            { id: 22, name: "野柳地質公園", rating: 4.5, type: "自然景觀", isPaid: true, price: "$80 TWD", address: "新北市萬里區港東路167-1號", lat: 25.2064, lng: 121.6905 } // Far
+        ];
+
+        // --- 2. Application Logic (應用程式邏輯) ---
+        
+        const app = {
+            userPos: { lat: MOCK_BASE_LAT, lng: MOCK_BASE_LNG }, // Default fallback
+            currentRadius: 5,
+            minRating: 3.8,
+
+            init() {
+                this.cacheDOM();
+                this.bindEvents();
+                this.refreshLocation();
+                
+                // Initialize Lucide icons
+                lucide.createIcons();
+            },
+
+            cacheDOM() {
+                this.dom = {
+                    radiusInput: document.getElementById('radius-input'),
+                    radiusVal: document.getElementById('radius-val'),
+                    ratingInput: document.getElementById('rating-input'),
+                    listPaid: document.getElementById('list-paid'),
+                    listFree: document.getElementById('list-free'),
+                    countPaid: document.getElementById('count-paid'),
+                    countFree: document.getElementById('count-free'),
+                    gpsStatus: document.getElementById('gps-status')
+                };
+            },
+
+            bindEvents() {
+                this.dom.radiusInput.addEventListener('input', (e) => {
+                    this.currentRadius = parseInt(e.target.value);
+                    this.dom.radiusVal.textContent = `${this.currentRadius} km`;
+                    this.render();
+                });
+
+                this.dom.ratingInput.addEventListener('change', (e) => {
+                    this.minRating = parseFloat(e.target.value);
+                    this.render();
+                });
+            },
+
+            refreshLocation() {
+                this.dom.gpsStatus.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...';
+                lucide.createIcons();
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            this.userPos = {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            };
+                            this.dom.gpsStatus.innerHTML = '<i data-lucide="map-pin" class="w-3 h-3 text-green-600"></i> 定位成功';
+                            this.render();
+                            lucide.createIcons();
+                        },
+                        (error) => {
+                            console.warn("Geolocation denied or failed, using default mockup location.", error);
+                            this.dom.gpsStatus.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 text-orange-500"></i> 使用模擬位置 (台北)';
+                            // In a real app, we might reset to a default center, keeping current mock center for demo
+                            this.render();
+                            lucide.createIcons();
+                        }
+                    );
+                } else {
+                    this.dom.gpsStatus.innerHTML = '瀏覽器不支援定位';
+                    this.render();
+                }
+            },
+
+            // Haversine formula to calculate distance in km
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371; // Radius of the earth in km
+                const dLat = this.deg2rad(lat2 - lat1);
+                const dLon = this.deg2rad(lon2 - lon1);
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const d = R * c; // Distance in km
+                return d;
+            },
+
+            deg2rad(deg) {
+                return deg * (Math.PI / 180);
+            },
+
+            formatDistance(km) {
+                if (km < 1) {
+                    return `${Math.round(km * 1000)} m`;
+                }
+                return `${km.toFixed(1)} km`;
+            },
+
+            render() {
+                // 1. Process Data: Calculate distance, Filter, Sort
+                const processedData = POI_DATABASE.map(place => {
+                    const dist = this.calculateDistance(this.userPos.lat, this.userPos.lng, place.lat, place.lng);
+                    return { ...place, distance: dist };
+                })
+                .filter(place => place.distance <= this.currentRadius && place.rating >= this.minRating)
+                .sort((a, b) => b.rating - a.rating); // Sort by rating descending
+
+                // 2. Split Categories
+                const paidPlaces = processedData.filter(p => p.isPaid).slice(0, 10); // Top 10
+                const freePlaces = processedData.filter(p => !p.isPaid).slice(0, 10); // Top 10
+
+                // 3. Update Counts
+                this.dom.countPaid.textContent = paidPlaces.length;
+                this.dom.countFree.textContent = freePlaces.length;
+
+                // 4. Generate HTML
+                this.dom.listPaid.innerHTML = paidPlaces.length ? paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('') : this.getEmptyHTML();
+                this.dom.listFree.innerHTML = freePlaces.length ? freePlaces.map(p => this.createCardHTML(p, 'free')).join('') : this.getEmptyHTML();
+
+                // Re-init icons for new content
+                lucide.createIcons();
+            },
+
+            createCardHTML(place, type) {
+                const isPaid = type === 'paid';
+                const borderColor = isPaid ? 'border-amber-200 hover:border-amber-400' : 'border-emerald-200 hover:border-emerald-400';
+                const bgColor = isPaid ? 'bg-white' : 'bg-white';
+                const badgeColor = isPaid ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+                const btnColor = isPaid ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700';
+                const icon = isPaid ? 'ticket' : 'trees';
+                
+                // Google Maps Navigation URL
+                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+
+                return `
+                    <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 ${borderColor} ${bgColor} shadow-sm transition-all duration-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight">${place.name}</h3>
+                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1">
+                                    <i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${place.type}
+                                </span>
+                            </div>
+                            <div class="flex items-center bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
+                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-current mr-1"></i>
+                                <span class="font-bold text-gray-700 text-sm">${place.rating}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2 text-sm text-gray-600 space-y-2">
+                            <div class="flex items-center">
+                                <i data-lucide="banknote" class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"></i>
+                                <span class="${isPaid ? 'font-medium text-gray-800' : 'text-emerald-600 font-medium'}">
+                                    ${place.price}
+                                </span>
+                            </div>
+                            <div class="flex items-start">
+                                <i data-lucide="map-pin" class="w-4 h-4 mr-2 opacity-70 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-xs text-gray-500 line-clamp-1" title="${place.address}">${place.address}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i data-lucide="route" class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"></i>
+                                <span>距離: <strong>${this.formatDistance(place.distance)}</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                             <span class="text-xs text-gray-400">#${type === 'paid' ? '付費景點' : '免費景點'}</span>
+                             <a href="${navUrl}" target="_blank" class="${btnColor} text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">
+                                導航 <i data-lucide="navigation" class="w-3 h-3 ml-2"></i>
+                             </a>
+                        </div>
+                    </div>
+                `;
+            },
+
+            getEmptyHTML() {
+                return `
+                    <div class="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
+                        <p class="text-gray-400 text-sm">無符合條件的景點</p>
+                    </div>
+                `;
+            }
+        };
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>
