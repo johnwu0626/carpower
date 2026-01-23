@@ -42,10 +42,13 @@
             display: none;
         }
 
-        /* 景點與美食卡片互動 */
+        /* 統一卡片互動效果 */
+        .card-hover {
+            transition: all 0.2s ease-in-out;
+        }
         .card-hover:hover {
             transform: translateY(-2px);
-            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
         /* 載入動畫 */
@@ -60,15 +63,15 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
+<body class="bg-gray-50 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
 
     <!-- ========================================== -->
     <!-- 視圖 1: EV 充電站導航 -->
     <!-- ========================================== -->
-    <div id="view-ev" class="flex-1 overflow-y-auto pb-20 relative">
-        <!-- 統一 Header 風格 -->
-        <header class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center h-16">
+    <div id="view-ev" class="flex-1 overflow-y-auto pb-20 relative flex flex-col">
+        <!-- 統一 Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-40 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center h-16">
                 <h1 class="text-lg font-bold text-gray-800 flex items-center">
                     <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-2">
                         <i class="fas fa-charging-station"></i>
@@ -81,35 +84,43 @@
             </div>
         </header>
 
-        <main class="max-w-md mx-auto px-4 py-6">
-            <!-- 狀態卡片 (保持 EV 特色但微調間距) -->
-            <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-6 text-center">
-                <p class="text-sm opacity-90 mb-1">目前位置狀態</p>
-                <h2 id="status-text" class="text-2xl font-bold mb-4">準備就緒</h2>
-                <button id="locate-btn" onclick="startLocationProcess()" class="bg-white text-green-600 hover:bg-green-50 font-bold py-3 px-8 rounded-full shadow-md transition transform hover:scale-105 active:scale-95 w-full flex items-center justify-center gap-2">
-                    <i class="fas fa-location-arrow"></i> 搜尋附近充電站
-                </button>
-                <div id="error-container" class="hidden mt-4 bg-red-500/20 rounded-lg p-3 backdrop-blur-sm border border-red-200/30">
-                    <p id="error-msg" class="text-white text-sm font-medium mb-2"></p>
-                    <div class="flex gap-2 justify-center">
-                        <button onclick="useDefaultLocation()" class="text-xs bg-white text-red-600 px-3 py-1 rounded shadow hover:bg-gray-100 transition">
-                            <i class="fas fa-map-pin mr-1"></i> 強制使用預設位置
-                        </button>
+        <!-- 統一控制列 -->
+        <section class="bg-white border-b border-gray-200 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center text-sm text-gray-500 whitespace-nowrap">
+                        <i class="fas fa-info-circle mr-2 text-green-500"></i>
+                        <span id="status-text">準備就緒</span>
                     </div>
+                    
+                    <button id="locate-btn" onclick="startLocationProcess()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 whitespace-nowrap">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
+                    </button>
+                </div>
+                <!-- 錯誤訊息區塊 -->
+                <div id="error-container" class="hidden mt-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                    <p id="error-msg" class="text-xs text-red-600 font-medium"></p>
+                    <button onclick="useDefaultLocation()" class="text-xs bg-white border border-red-200 text-red-600 px-2 py-1 rounded shadow-sm">
+                        使用預設位置
+                    </button>
                 </div>
             </div>
+        </section>
 
+        <main class="max-w-2xl mx-auto px-4 py-4 w-full">
             <div id="result-container" class="space-y-4 hidden">
                 <div class="flex justify-between items-center px-1">
-                    <h3 class="font-bold text-gray-700">推薦站點 (依距離排序)</h3>
-                    <span class="text-xs text-gray-500">來源: 模擬數據</span>
+                    <h3 class="font-bold text-gray-700">推薦站點</h3>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">依距離排序</span>
                 </div>
-                <div id="station-list"></div>
+                <div id="station-list" class="space-y-3"></div>
             </div>
 
-            <div id="empty-state" class="text-center py-10 text-gray-400">
-                <i class="fas fa-map-marked-alt text-6xl mb-4 text-gray-300"></i>
-                <p>點擊上方按鈕<br>找出各時段最佳充電站</p>
+            <div id="empty-state" class="text-center py-12 text-gray-400">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-map-marked-alt text-2xl text-gray-300"></i>
+                </div>
+                <p>點擊上方按鈕<br>開始搜尋最佳充電站</p>
             </div>
         </main>
     </div>
@@ -118,7 +129,7 @@
     <!-- 視圖 2: 美食決策導航 -->
     <!-- ========================================== -->
     <div id="view-food" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
-        <!-- 統一 Header 風格 -->
+        <!-- 統一 Header -->
         <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
             <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between h-16">
                 <h1 class="text-lg font-bold text-gray-800 flex items-center">
@@ -133,41 +144,37 @@
             </div>
         </header>
 
-        <!-- 統一控制列風格 -->
+        <!-- 統一控制列 (Grid) -->
         <section class="bg-white border-b border-gray-200 flex-none">
             <div class="max-w-2xl mx-auto px-4 py-3">
-                <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <!-- 評分篩選 -->
-                    <div class="flex-none w-32">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                <i class="fas fa-star text-yellow-400 text-xs"></i>
-                            </div>
-                            <select id="rating-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2">
-                                <option value="3.0">3.0+ ⭐</option>
-                                <option value="3.5">3.5+ ⭐</option>
-                                <option value="3.8" selected>3.8+ ⭐</option>
-                                <option value="4.0">4.0+ ⭐</option>
-                            </select>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-star text-yellow-400 text-xs"></i>
                         </div>
+                        <select id="rating-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="3.0">3.0+ ⭐</option>
+                            <option value="3.5">3.5+ ⭐</option>
+                            <option value="3.8" selected>3.8+ ⭐</option>
+                            <option value="4.0">4.0+ ⭐</option>
+                        </select>
                     </div>
                     <!-- 距離篩選 -->
-                    <div class="flex-none w-32">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                <i class="fas fa-ruler-horizontal text-blue-400 text-xs"></i>
-                            </div>
-                            <select id="distance-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2">
-                                <option value="0.5">0.5 km</option>
-                                <option value="1.0" selected>1.0 km</option>
-                                <option value="2.0">2.0 km</option>
-                                <option value="5.0">5.0 km</option>
-                            </select>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-ruler-horizontal text-blue-400 text-xs"></i>
                         </div>
+                        <select id="distance-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="0.5">0.5 km</option>
+                            <option value="1.0" selected>1.0 km</option>
+                            <option value="2.0">2.0 km</option>
+                            <option value="5.0">5.0 km</option>
+                        </select>
                     </div>
-                    <!-- 重新整理按鈕 -->
-                    <button onclick="initApp()" class="flex-none bg-orange-50 text-orange-600 hover:bg-orange-100 px-3 py-2 rounded-lg text-sm font-medium transition ml-auto">
-                        <i class="fas fa-sync-alt"></i>
+                    <!-- 統一的大按鈕 -->
+                    <button onclick="initApp()" class="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
                     </button>
                 </div>
             </div>
@@ -189,9 +196,11 @@
         </div>
         
         <template id="no-results-template">
-            <div class="text-center py-10 text-gray-400 fade-in">
-                <i class="fas fa-search fa-3x mb-3 opacity-30"></i>
-                <p>哎呀！這個範圍內找不到符合條件的餐廳。</p>
+            <div class="text-center py-12 text-gray-400 fade-in">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-2xl text-gray-300"></i>
+                </div>
+                <p>哎呀！這個範圍內<br>找不到符合條件的餐廳</p>
             </div>
         </template>
     </div>
@@ -200,9 +209,9 @@
     <!-- 視圖 3: 景點探索導航 -->
     <!-- ========================================== -->
     <div id="view-attractions" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
-        <!-- 統一 Header 風格 -->
+        <!-- 統一 Header -->
         <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between h-16">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between h-16">
                 <h1 class="text-lg font-bold text-gray-800 flex items-center">
                     <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
                         <i class="fas fa-map-marked-alt"></i>
@@ -215,30 +224,63 @@
             </div>
         </header>
 
-        <!-- 統一控制列風格 -->
+        <!-- 統一控制列 (Grid Layout) -->
         <section class="bg-white border-b border-gray-200 flex-none">
-            <div class="max-w-7xl mx-auto px-4 py-3">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <!-- 半徑 -->
-                    <div class="flex flex-col justify-center">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs font-medium text-gray-500">搜尋半徑</span>
-                            <span id="radius-val" class="text-xs font-bold text-blue-600">5 km</span>
-                        </div>
-                        <input type="range" id="radius-input" min="1" max="30" value="5" step="1" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                    </div>
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     
+                    <!-- 縣市篩選 (已更新為縣市) -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                             <i class="fas fa-map text-gray-400 text-xs"></i>
+                        </div>
+                        <select id="district-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="all">全台縣市 (不限)</option>
+                            <option value="台北市">台北市</option>
+                            <option value="新北市">新北市</option>
+                            <option value="基隆市">基隆市</option>
+                            <option value="桃園市">桃園市</option>
+                            <option value="新竹市">新竹市</option>
+                            <option value="新竹縣">新竹縣</option>
+                            <option value="苗栗縣">苗栗縣</option>
+                            <option value="台中市">台中市</option>
+                            <option value="彰化縣">彰化縣</option>
+                            <option value="南投縣">南投縣</option>
+                            <option value="雲林縣">雲林縣</option>
+                            <option value="嘉義市">嘉義市</option>
+                            <option value="嘉義縣">嘉義縣</option>
+                            <option value="台南市">台南市</option>
+                            <option value="高雄市">高雄市</option>
+                            <option value="屏東縣">屏東縣</option>
+                            <option value="宜蘭縣">宜蘭縣</option>
+                            <option value="花蓮縣">花蓮縣</option>
+                            <option value="台東縣">台東縣</option>
+                            <option value="澎湖縣">澎湖縣</option>
+                            <option value="金門縣">金門縣</option>
+                            <option value="連江縣">連江縣</option>
+                        </select>
+                    </div>
+
                     <!-- 評分 -->
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                              <i class="fas fa-star text-yellow-400 text-xs"></i>
                         </div>
-                        <select id="rating-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2">
+                        <select id="rating-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
                             <option value="3.8">3.8+ ⭐</option>
                             <option value="4.0">4.0+ ⭐</option>
                             <option value="4.2">4.2+ ⭐</option>
                             <option value="4.5">4.5+ ⭐</option>
                         </select>
+                    </div>
+
+                    <!-- 半徑 -->
+                    <div class="flex flex-col justify-center">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-medium text-gray-500">搜尋半徑</span>
+                            <span id="radius-val" class="text-xs font-bold text-blue-600">30 km</span>
+                        </div>
+                        <input type="range" id="radius-input" min="1" max="50" value="30" step="1" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
                     </div>
 
                     <!-- 按鈕 -->
@@ -249,25 +291,25 @@
             </div>
         </section>
 
-        <main class="flex-grow overflow-y-auto px-4 py-6 w-full pb-24">
-            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Column 1 -->
-                <div class="flex flex-col space-y-4">
-                    <div class="flex items-center space-x-2 pb-2 border-b-2 border-amber-400">
+        <main class="flex-grow overflow-y-auto px-4 py-4 w-full pb-24">
+            <div class="max-w-2xl mx-auto grid grid-cols-1 gap-6">
+                <!-- 統一為單欄流式佈局 -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
                         <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600"><i class="fas fa-ticket-alt"></i></div>
-                        <div><h2 class="text-lg font-bold text-gray-800">付費探索</h2></div>
-                        <span id="count-paid" class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+                        <div><h2 class="text-base font-bold text-gray-800">付費探索</h2></div>
+                        <span id="count-paid" class="ml-auto bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-full border border-amber-100">0</span>
                     </div>
-                    <div id="list-paid" class="space-y-3 min-h-[100px]"></div>
+                    <div id="list-paid" class="space-y-3"></div>
                 </div>
-                <!-- Column 2 -->
-                <div class="flex flex-col space-y-4">
-                    <div class="flex items-center space-x-2 pb-2 border-b-2 border-emerald-400">
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
                         <div class="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><i class="fas fa-tree"></i></div>
-                        <div><h2 class="text-lg font-bold text-gray-800">免費漫遊</h2></div>
-                        <span id="count-free" class="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+                        <div><h2 class="text-base font-bold text-gray-800">免費漫遊</h2></div>
+                        <span id="count-free" class="ml-auto bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full border border-emerald-100">0</span>
                     </div>
-                    <div id="list-free" class="space-y-3 min-h-[100px]"></div>
+                    <div id="list-free" class="space-y-3"></div>
                 </div>
             </div>
         </main>
@@ -308,12 +350,10 @@
             const navFood = document.getElementById('nav-food');
             const navAttr = document.getElementById('nav-attractions');
 
-            // 隱藏所有視圖
             evView.classList.add('hidden');
             foodView.classList.add('hidden');
             attrView.classList.add('hidden');
 
-            // 重置導航樣式
             navEv.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-green-600 transition-colors duration-200 group";
             navFood.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group";
             navAttr.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group";
@@ -351,46 +391,112 @@
             const btn = document.getElementById('locate-btn');
             const statusText = document.getElementById('status-text');
             const errorContainer = document.getElementById('error-container');
-            btn.disabled = true; btn.innerHTML = '<div class="loader"></div> 定位中...'; statusText.innerText = "正在取得 GPS..."; errorContainer.classList.add('hidden');
+            
+            btn.disabled = true; 
+            btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-2"></div> 定位中...'; 
+            statusText.innerText = "正在取得 GPS..."; 
+            errorContainer.classList.add('hidden');
+
             if (!navigator.geolocation) { handleError("此瀏覽器不支援定位"); return; }
+            
             navigator.geolocation.getCurrentPosition(
-                (position) => { statusText.innerText = "已鎖定位置"; generateAndRenderStations(position.coords.latitude, position.coords.longitude); btn.innerHTML = '<i class="fas fa-sync-alt"></i> 重新搜尋'; btn.disabled = false; },
-                (error) => { handleError("定位失敗，請確認權限"); }, { enableHighAccuracy: false, timeout: 15000 }
+                (position) => { 
+                    statusText.innerText = "已鎖定位置"; 
+                    generateAndRenderStations(position.coords.latitude, position.coords.longitude); 
+                    // Update button text to match standard
+                    btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋'; 
+                    btn.disabled = false; 
+                },
+                (error) => { handleError("定位失敗，請確認權限"); }, 
+                { enableHighAccuracy: false, timeout: 15000 }
             );
         }
+        
         function useDefaultLocation() {
-            document.getElementById('error-container').classList.add('hidden'); document.getElementById('status-text').innerText = "使用預設位置 (蘆洲)";
-            generateAndRenderStations(25.08, 121.47); document.getElementById('locate-btn').innerHTML = '<i class="fas fa-sync-alt"></i> 重新搜尋'; document.getElementById('locate-btn').disabled = false;
+            document.getElementById('error-container').classList.add('hidden'); 
+            document.getElementById('status-text').innerText = "使用預設位置 (蘆洲)";
+            generateAndRenderStations(25.08, 121.47); 
+            const btn = document.getElementById('locate-btn');
+            // Update button text to match standard
+            btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋'; 
+            btn.disabled = false;
         }
+        
         function handleError(msg) {
-            document.getElementById('locate-btn').disabled = false; document.getElementById('locate-btn').innerHTML = '再試一次'; document.getElementById('status-text').innerText = "定位失敗";
-            document.getElementById('error-msg').innerText = msg; document.getElementById('error-container').classList.remove('hidden');
+            const btn = document.getElementById('locate-btn');
+            btn.disabled = false; 
+            btn.innerHTML = '<i class="fas fa-redo mr-2"></i> 再試一次'; 
+            document.getElementById('status-text').innerText = "定位失敗";
+            document.getElementById('error-msg').innerText = msg; 
+            document.getElementById('error-container').classList.remove('hidden');
         }
+        
         function generateAndRenderStations(userLat, userLng) {
-            document.getElementById('empty-state').classList.add('hidden'); document.getElementById('result-container').classList.remove('hidden');
-            const list = document.getElementById('station-list'); list.innerHTML = '';
+            document.getElementById('empty-state').classList.add('hidden'); 
+            document.getElementById('result-container').classList.remove('hidden');
+            const list = document.getElementById('station-list'); 
+            list.innerHTML = '';
+            
             let stations = [];
             for (let i = 0; i < 10; i++) {
                 const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
                 const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
                 stations.push({
-                    name: `${brand.name} (站點 ${String.fromCharCode(65+i)})`, lat: userLat + (Math.random()-0.5)*0.04, lng: userLng + (Math.random()-0.5)*0.04,
-                    price: brand.basePrice, type: brand.type, brandType: brand.name.includes("公有") ? "slow" : "fast", address: `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`
+                    name: `${brand.name} (站點 ${String.fromCharCode(65+i)})`, 
+                    lat: userLat + (Math.random()-0.5)*0.04, 
+                    lng: userLng + (Math.random()-0.5)*0.04,
+                    price: brand.basePrice, 
+                    type: brand.type, 
+                    brandType: brand.name.includes("公有") ? "slow" : "fast", 
+                    address: `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`
                 });
             }
             stations.forEach(s => s.distance = calculateHaversineDistance(userLat, userLng, s.lat, s.lng));
             stations.sort((a, b) => a.distance - b.distance);
             stations.forEach((s, idx) => list.appendChild(createStationCard(s, idx)));
         }
+        
         function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
         }
+        
+        // 統一後的 EV 卡片設計 (Matching Food/Attraction style)
         function createStationCard(s, index) {
-            const div = document.createElement('div'); div.className = "bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 border border-gray-100 fade-in"; div.style.animationDelay = `${index * 0.1}s`;
-            const iconClass = s.brandType === 'fast' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600';
-            div.innerHTML = `<div class="flex justify-between items-start"><div class="flex gap-3"><div class="w-10 h-10 rounded-lg ${iconClass} flex items-center justify-center flex-shrink-0"><i class="fas ${s.brandType === 'fast' ? 'fa-bolt' : 'fa-plug'}"></i></div><div><h4 class="font-bold text-lg text-gray-800">${s.name}</h4><div class="text-sm text-gray-500 mt-1"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium">${s.type}</span><span class="ml-2"><i class="fas fa-map-marker-alt text-gray-400"></i> ${s.distance} km</span></div></div></div><div class="text-right"><div class="text-xl font-bold text-green-600">$${s.price}</div><div class="text-xs text-gray-400">/度</div></div></div><div class="text-sm text-gray-600 mt-2 flex items-center px-1"><i class="fas fa-map-pin w-5 text-center mr-1 text-red-400"></i><span class="truncate">${s.address}</span></div><div class="mt-2 pt-3 border-t border-gray-100 flex gap-2"><a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 rounded-lg font-medium"><i class="fas fa-location-arrow"></i> 立即導航</a></div>`;
+            const div = document.createElement('div'); 
+            div.className = "bg-white rounded-xl p-4 shadow-sm border border-gray-100 card-hover mb-3"; 
+            div.style.animationDelay = `${index * 0.1}s`;
+            div.classList.add('fade-in');
+            
+            const iconColor = s.brandType === 'fast' ? 'text-orange-500' : 'text-blue-500';
+            const iconBg = s.brandType === 'fast' ? 'bg-orange-50' : 'bg-blue-50';
+            
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex gap-3">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg leading-tight">${s.name}</h4>
+                            <div class="flex items-center mt-1 text-sm text-gray-500">
+                                <span class="${iconBg} ${iconColor} px-2 py-0.5 rounded text-xs font-medium mr-2">${s.type}</span>
+                                <span><i class="fas fa-bolt text-yellow-400 mr-1"></i>$${s.price}/度</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit text-gray-600 font-medium">${s.distance} km</span>
+                </div>
+                
+                <div class="text-sm text-gray-600 mt-2 flex items-center px-1">
+                    <i class="fas fa-map-pin w-5 text-center mr-1 text-gray-400"></i>
+                    <span class="truncate">${s.address}</span>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t border-gray-50 flex justify-end">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm active:scale-95">
+                        導航 <i class="fas fa-location-arrow ml-2"></i>
+                    </a>
+                </div>
+            `;
             return div;
         }
 
@@ -408,14 +514,12 @@
                 document.getElementById('location-text').innerText = `目前位置: ${foodUserLocation.lat.toFixed(4)}, ${foodUserLocation.lng.toFixed(4)}`;
                 allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
                 applyFilters();
-                // Update GPS status on success
                 document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-map-marker-alt text-green-500"></i> 定位成功';
             } catch (e) {
                 foodUserLocation = { lat: 25.0478, lng: 121.5170 };
                 document.getElementById('location-text').innerText = "使用預設位置 (台北)";
                 allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
                 applyFilters();
-                // Update GPS status on fail
                 document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-exclamation-circle text-orange-500"></i> 模擬位置';
             }
             setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); document.getElementById('category-tabs').classList.remove('hidden'); document.getElementById('status-msg').classList.remove('hidden'); }, 800);
@@ -424,19 +528,11 @@
             let data = [];
             Object.keys(FOOD_CONFIG.categories).forEach(type => {
                 for(let i=0; i<10; i++) {
-                    // 使用 EV 模組的路名庫產生隨機地址
                     const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
                     const address = `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`;
-                    
                     data.push({
-                        name: `${FOOD_CONFIG.categories[type].name} ${i+1}號店`, 
-                        type, 
-                        lat: lat+(Math.random()-0.5)*0.03, 
-                        lng: lng+(Math.random()-0.5)*0.03,
-                        rating: (3.5+Math.random()*1.5).toFixed(1), 
-                        reviews: Math.floor(Math.random()*500), 
-                        address: address, // 加入生成的地址
-                        isOpen: Math.random()>0.2
+                        name: `${FOOD_CONFIG.categories[type].name} ${i+1}號店`, type, lat: lat+(Math.random()-0.5)*0.03, lng: lng+(Math.random()-0.5)*0.03,
+                        rating: (3.5+Math.random()*1.5).toFixed(1), reviews: Math.floor(Math.random()*500), address: address, isOpen: Math.random()>0.2
                     });
                 }
             });
@@ -459,25 +555,24 @@
             if(Object.keys(data).length === 0) { container.innerHTML = document.getElementById('no-results-template').innerHTML; return; }
             Object.keys(data).forEach((key, idx) => {
                 const items = data[key];
-                tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx===0?'bg-orange-600 text-white':'bg-white text-gray-600'}"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
+                tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx===0?'bg-orange-600 text-white':'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
                 let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold text-gray-800">${FOOD_CONFIG.categories[key].name}</h2></div>`;
                 items.slice(0, 5).forEach(item => {
                     html += `
                     <div class="bg-white rounded-xl p-4 shadow-sm mb-3 border border-gray-100 card-hover">
                         <div class="flex justify-between">
                             <div>
-                                <h3 class="font-bold text-gray-800">${item.name}</h3>
-                                <div class="text-sm text-gray-500 mt-1"><i class="fas fa-star text-yellow-400"></i> ${item.rating} (${item.reviews})</div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight">${item.name}</h3>
+                                <div class="text-sm text-gray-500 mt-1"><i class="fas fa-star text-yellow-400"></i> ${item.rating} <span class="text-xs text-gray-400">(${item.reviews})</span></div>
                             </div>
-                            <span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit text-gray-600">${item.distance} km</span>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit text-gray-600 font-medium">${item.distance} km</span>
                         </div>
-                        <!-- 新增地址顯示區塊 -->
                         <div class="text-sm text-gray-600 mt-2 flex items-center">
-                            <i class="fas fa-map-marker-alt w-5 text-center mr-1 opacity-70"></i>
+                            <i class="fas fa-map-marker-alt w-5 text-center mr-1 text-gray-400"></i>
                             <span class="truncate">${item.address}</span>
                         </div>
-                        <div class="mt-2 pt-2 border-t border-gray-50 flex justify-end">
-                            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm">出發 <i class="fas fa-location-arrow ml-1"></i></a>
+                        <div class="mt-3 pt-3 border-t border-gray-50 flex justify-end">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm active:scale-95">導航 <i class="fas fa-location-arrow ml-2"></i></a>
                         </div>
                     </div>`;
                 });
@@ -488,6 +583,7 @@
         // ==========================================
         // 景點探索導航功能程式碼
         // ==========================================
+        // 大幅擴充資料庫以支援 30 筆上限
         const POI_DATABASE = [
             { id: 1, name: "當代藝術館", rating: 4.3, type: "美術館", isPaid: true, price: "$100", address: "台北市大同區長安西路39號", lat: 25.0504, lng: 121.5186 },
             { id: 2, name: "天文科學教育館", rating: 4.5, type: "博物館", isPaid: true, price: "$40", address: "台北市士林區基河路363號", lat: 25.0963, lng: 121.5168 },
@@ -498,26 +594,74 @@
             { id: 7, name: "中正紀念堂", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市中正區中山南路21號", lat: 25.0354, lng: 121.5197 },
             { id: 8, name: "象山親山步道", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市信義區信義路五段150巷", lat: 25.0270, lng: 121.5707 },
             { id: 9, name: "松山文創園區", rating: 4.4, type: "文創園區", isPaid: false, price: "免費", address: "台北市信義區光復南路133號", lat: 25.0437, lng: 121.5606 },
-            { id: 10, name: "饒河街觀光夜市", rating: 4.1, type: "夜市", isPaid: false, price: "免費", address: "台北市松山區饒河街", lat: 25.0509, lng: 121.5775 }
+            { id: 10, name: "饒河街觀光夜市", rating: 4.1, type: "夜市", isPaid: false, price: "免費", address: "台北市松山區饒河街", lat: 25.0509, lng: 121.5775 },
+            // 老街
+            { id: 11, name: "迪化街年貨大街", rating: 4.4, type: "老街", isPaid: false, price: "免費", address: "台北市大同區迪化街一段", lat: 25.0556, lng: 121.5103 },
+            { id: 12, name: "剝皮寮歷史街區", rating: 4.5, type: "老街", isPaid: false, price: "免費", address: "台北市萬華區康定路173巷", lat: 25.0366, lng: 121.5022 },
+            { id: 13, name: "淡水老街", rating: 4.5, type: "老街", isPaid: false, price: "免費", address: "新北市淡水區中正路", lat: 25.1695, lng: 121.4443 },
+            { id: 14, name: "深坑老街", rating: 4.2, type: "老街", isPaid: false, price: "免費", address: "新北市深坑區深坑街", lat: 25.0003, lng: 121.6150 },
+            { id: 15, name: "三峽老街", rating: 4.6, type: "老街", isPaid: false, price: "免費", address: "新北市三峽區民權街", lat: 24.9337, lng: 121.3703 },
+            { id: 16, name: "九份老街", rating: 4.4, type: "老街", isPaid: false, price: "免費", address: "新北市瑞芳區基山街", lat: 25.1099, lng: 121.8452 },
+            // 更多景點
+            { id: 17, name: "華山1914文創園區", rating: 4.6, type: "文創園區", isPaid: false, price: "免費", address: "台北市中正區八德路一段1號", lat: 25.0441, lng: 121.5294 },
+            { id: 18, name: "國父紀念館", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市信義區仁愛路四段505號", lat: 25.0400, lng: 121.5602 },
+            { id: 19, name: "龍山寺", rating: 4.7, type: "寺廟", isPaid: false, price: "免費", address: "台北市萬華區廣州街211號", lat: 25.0371, lng: 121.4999 },
+            { id: 20, name: "台北市立動物園", rating: 4.6, type: "動物園", isPaid: true, price: "$60", address: "台北市文山區新光路二段30號", lat: 24.9983, lng: 121.5811 },
+            { id: 21, name: "貓空纜車", rating: 4.4, type: "纜車", isPaid: true, price: "$120", address: "台北市文山區新光路二段8號", lat: 24.9961, lng: 121.5763 },
+            { id: 22, name: "美麗華摩天輪", rating: 4.3, type: "遊樂園", isPaid: true, price: "$200", address: "台北市中山區敬業三路20號", lat: 25.0835, lng: 121.5574 },
+            { id: 23, name: "士林官邸", rating: 4.4, type: "花園", isPaid: true, price: "$100", address: "台北市士林區福林路60號", lat: 25.0934, lng: 121.5308 },
+            { id: 24, name: "北投溫泉博物館", rating: 4.5, type: "博物館", isPaid: false, price: "免費", address: "台北市北投區中山路2號", lat: 25.1365, lng: 121.5065 },
+            { id: 25, name: "陽明山國家公園", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市北投區竹子湖路1-20號", lat: 25.1558, lng: 121.5477 },
+            { id: 26, name: "碧潭風景區", rating: 4.3, type: "自然景觀", isPaid: false, price: "免費", address: "新北市新店區新店路", lat: 24.9575, lng: 121.5372 },
+            { id: 27, name: "鶯歌陶瓷老街", rating: 4.3, type: "老街", isPaid: false, price: "免費", address: "新北市鶯歌區尖山埔路", lat: 24.9537, lng: 121.3485 },
+            { id: 28, name: "林本源園邸", rating: 4.4, type: "歷史地標", isPaid: true, price: "$80", address: "新北市板橋區西門街9號", lat: 25.0118, lng: 121.4549 },
+            { id: 29, name: "十分瀑布", rating: 4.5, type: "自然景觀", isPaid: true, price: "$100", address: "新北市平溪區乾坑10號", lat: 25.0494, lng: 121.7877 },
+            { id: 30, name: "野柳地質公園", rating: 4.5, type: "自然景觀", isPaid: true, price: "$120", address: "新北市萬里區港東路167-1號", lat: 25.2064, lng: 121.6905 },
+            { id: 31, name: "金山老街", rating: 4.2, type: "老街", isPaid: false, price: "免費", address: "新北市金山區金包里街", lat: 25.2217, lng: 121.6384 },
+            { id: 32, name: "四四南村", rating: 4.3, type: "文創園區", isPaid: false, price: "免費", address: "台北市信義區松勤街50號", lat: 25.0312, lng: 121.5619 },
+            { id: 33, name: "寶藏巖國際藝術村", rating: 4.4, type: "文創園區", isPaid: false, price: "免費", address: "台北市中正區汀州路三段230巷14弄2號", lat: 25.0107, lng: 121.5323 },
+            { id: 34, name: "大稻埕碼頭", rating: 4.5, type: "自然景觀", isPaid: false, price: "免費", address: "台北市大同區民生西路底", lat: 25.0569, lng: 121.5076 },
+            { id: 35, name: "板橋435藝文特區", rating: 4.3, type: "文創園區", isPaid: false, price: "免費", address: "新北市板橋區中正路435號", lat: 25.0253, lng: 121.4533 }
         ];
 
         const attractionApp = {
             userPos: { lat: 25.0478, lng: 121.5170 },
-            currentRadius: 5, minRating: 3.8,
+            currentRadius: 30, // 預設半徑調大，方便搜尋較遠景點
+            minRating: 3.8,
+            currentDistrict: 'all', // 新增行政區狀態
+            
             init() {
-                this.cacheDOM(); this.bindEvents(); this.refreshLocation();
+                this.cacheDOM(); 
+                this.bindEvents(); 
+                this.refreshLocation();
             },
             cacheDOM() {
                 this.dom = {
-                    radiusInput: document.getElementById('radius-input'), radiusVal: document.getElementById('radius-val'),
-                    ratingInput: document.getElementById('rating-input'), listPaid: document.getElementById('list-paid'),
-                    listFree: document.getElementById('list-free'), countPaid: document.getElementById('count-paid'),
-                    countFree: document.getElementById('count-free'), gpsStatus: document.getElementById('gps-status')
+                    districtInput: document.getElementById('district-input'),
+                    radiusInput: document.getElementById('radius-input'), 
+                    radiusVal: document.getElementById('radius-val'),
+                    ratingInput: document.getElementById('rating-input'), 
+                    listPaid: document.getElementById('list-paid'),
+                    listFree: document.getElementById('list-free'), 
+                    countPaid: document.getElementById('count-paid'),
+                    countFree: document.getElementById('count-free'), 
+                    gpsStatus: document.getElementById('gps-status')
                 };
             },
             bindEvents() {
-                this.dom.radiusInput.addEventListener('input', (e) => { this.currentRadius = parseInt(e.target.value); this.dom.radiusVal.textContent = `${this.currentRadius} km`; this.render(); });
-                this.dom.ratingInput.addEventListener('change', (e) => { this.minRating = parseFloat(e.target.value); this.render(); });
+                this.dom.districtInput.addEventListener('change', (e) => {
+                    this.currentDistrict = e.target.value;
+                    this.render();
+                });
+                this.dom.radiusInput.addEventListener('input', (e) => { 
+                    this.currentRadius = parseInt(e.target.value); 
+                    this.dom.radiusVal.textContent = `${this.currentRadius} km`; 
+                    this.render(); 
+                });
+                this.dom.ratingInput.addEventListener('change', (e) => { 
+                    this.minRating = parseFloat(e.target.value); 
+                    this.render(); 
+                });
             },
             refreshLocation() {
                 this.dom.gpsStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 定位中...';
@@ -529,31 +673,39 @@
                 }
             },
             calculateDistance(lat1, lon1, lat2, lon2) {
-                return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2)); // 重用主程式函式
+                return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2)); 
             },
             render() {
-                // 為了模擬更真實，這裡我們動態產生一些基於使用者位置的假景點
+                // 1. 基本資料處理：計算距離
                 const processedData = POI_DATABASE.map(place => {
-                    const lat = place.lat + (Math.random()-0.5)*0.05;
-                    const lng = place.lng + (Math.random()-0.5)*0.05;
-                    const dist = this.calculateDistance(this.userPos.lat, this.userPos.lng, lat, lng);
-                    return { ...place, lat, lng, distance: dist };
+                    const dist = this.calculateDistance(this.userPos.lat, this.userPos.lng, place.lat, place.lng);
+                    return { ...place, distance: dist };
+                });
+
+                // 2. 篩選邏輯 (距離 + 評分 + 行政區)
+                const filteredData = processedData.filter(place => {
+                    const matchDist = place.distance <= this.currentRadius;
+                    const matchRating = place.rating >= this.minRating;
+                    const matchDistrict = this.currentDistrict === 'all' || place.address.includes(this.currentDistrict);
+                    
+                    return matchDist && matchRating && matchDistrict;
                 })
-                .filter(place => place.distance <= this.currentRadius && place.rating >= this.minRating)
                 .sort((a, b) => b.rating - a.rating);
 
-                const paidPlaces = processedData.filter(p => p.isPaid).slice(0, 10);
-                const freePlaces = processedData.filter(p => !p.isPaid).slice(0, 10);
+                // 3. 分類顯示 (付費/免費)，上限調整為 30 筆
+                const paidPlaces = filteredData.filter(p => p.isPaid).slice(0, 30);
+                const freePlaces = filteredData.filter(p => !p.isPaid).slice(0, 30);
 
                 this.dom.countPaid.textContent = paidPlaces.length;
                 this.dom.countFree.textContent = freePlaces.length;
-                this.dom.listPaid.innerHTML = paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('');
-                this.dom.listFree.innerHTML = freePlaces.map(p => this.createCardHTML(p, 'free')).join('');
+                this.dom.listPaid.innerHTML = paidPlaces.length ? paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('') : '<p class="text-gray-400 text-center py-4">無符合條件的景點</p>';
+                this.dom.listFree.innerHTML = freePlaces.length ? freePlaces.map(p => this.createCardHTML(p, 'free')).join('') : '<p class="text-gray-400 text-center py-4">無符合條件的景點</p>';
             },
             createCardHTML(place, type) {
+                // ... (保持原有的卡片 HTML 生成邏輯，完全相同) ...
                 const isPaid = type === 'paid';
                 const borderColor = isPaid ? 'border-amber-200 hover:border-amber-300' : 'border-emerald-200 hover:border-emerald-300';
-                const btnColor = isPaid ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700';
+                const btnColor = 'bg-blue-600 hover:bg-blue-700 text-white';
                 const icon = isPaid ? 'fa-ticket-alt' : 'fa-tree';
                 
                 return `
