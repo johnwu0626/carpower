@@ -6,10 +6,8 @@
     <title>EV 生活圈 - 充電、美食與景點</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 FontAwesome (EV/美食使用) -->
+    <!-- 引入 FontAwesome (統一全站圖示) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- 引入 Lucide Icons (景點使用) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- 引入 Noto Sans Font -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -24,7 +22,33 @@
         /* 底部安全區 */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
-        /* EV 單元樣式 */
+        /* 下拉選單自定義箭頭 */
+        .custom-select {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.0rem;
+        }
+
+        /* 隱藏滾動條但保留功能 */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 景點與美食卡片互動 */
+        .card-hover:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* 載入動畫 */
         .loader {
             border: 3px solid #f3f3f3;
             border-radius: 50%;
@@ -34,31 +58,6 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* 美食單元樣式 */
-        .category-scroll {
-            display: flex;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .category-scroll::-webkit-scrollbar { display: none; }
-        .food-select {
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ea580c' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
-            background-position: right 0.5rem center;
-            background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.0rem;
-        }
-
-        /* 景點單元樣式 */
-        .card-hover:hover {
-            transform: translateY(-2px);
-            transition: all 0.2s ease-in-out;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
@@ -67,17 +66,23 @@
     <!-- 視圖 1: EV 充電站導航 -->
     <!-- ========================================== -->
     <div id="view-ev" class="flex-1 overflow-y-auto pb-20 relative">
+        <!-- 統一 Header 風格 -->
         <header class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
-                <h1 class="text-xl font-bold text-gray-800">
-                    <i class="fas fa-charging-station text-green-500 mr-2"></i>EV 充電神探
+            <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-charging-station"></i>
+                    </div>
+                    EV 充電神探
                 </h1>
-                <div class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                    <i class="fas fa-wifi mr-1"></i>線上
+                <div class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-wifi text-green-500"></i> 線上
                 </div>
             </div>
         </header>
+
         <main class="max-w-md mx-auto px-4 py-6">
+            <!-- 狀態卡片 (保持 EV 特色但微調間距) -->
             <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg mb-6 text-center">
                 <p class="text-sm opacity-90 mb-1">目前位置狀態</p>
                 <h2 id="status-text" class="text-2xl font-bold mb-4">準備就緒</h2>
@@ -93,6 +98,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="result-container" class="space-y-4 hidden">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="font-bold text-gray-700">推薦站點 (依距離排序)</h3>
@@ -100,6 +106,7 @@
                 </div>
                 <div id="station-list"></div>
             </div>
+
             <div id="empty-state" class="text-center py-10 text-gray-400">
                 <i class="fas fa-map-marked-alt text-6xl mb-4 text-gray-300"></i>
                 <p>點擊上方按鈕<br>找出各時段最佳充電站</p>
@@ -110,52 +117,77 @@
     <!-- ========================================== -->
     <!-- 視圖 2: 美食決策導航 -->
     <!-- ========================================== -->
-    <div id="view-food" class="hidden flex-1 flex flex-col bg-[#f3f4f6] relative overflow-hidden">
-        <header class="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 shadow-lg flex-none z-10">
-            <div class="max-w-2xl mx-auto w-full flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                    <h1 class="text-xl font-bold flex items-center">
-                        <i class="fas fa-utensils mr-2"></i>美食決策導航
-                    </h1>
-                    <button onclick="initApp()" class="bg-white/20 hover:bg-white/30 active:scale-95 transition rounded-full p-2 w-10 h-10 flex items-center justify-center" title="重新定位與搜尋">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="flex flex-wrap items-center justify-between bg-white/10 backdrop-blur-sm rounded-lg p-2 px-3 border border-white/20 gap-2">
-                    <div class="flex items-center space-x-2">
-                        <label for="rating-select" class="text-sm font-medium text-white/90 whitespace-nowrap"><i class="fas fa-star text-yellow-300 mr-1"></i>評分</label>
-                        <select id="rating-select" onchange="applyFilters()" class="food-select bg-white text-orange-600 text-sm font-bold rounded px-2 py-1 focus:outline-none shadow-sm cursor-pointer w-24">
-                            <option value="3.0">3.0 ⭐</option>
-                            <option value="3.5">3.5 ⭐</option>
-                            <option value="3.8" selected>3.8 ⭐</option>
-                            <option value="4.0">4.0 ⭐</option>
-                        </select>
+    <div id="view-food" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
+        <!-- 統一 Header 風格 -->
+        <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-utensils"></i>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <label for="distance-select" class="text-sm font-medium text-white/90 whitespace-nowrap"><i class="fas fa-ruler-horizontal text-blue-200 mr-1"></i>距離</label>
-                        <select id="distance-select" onchange="applyFilters()" class="food-select bg-white text-orange-600 text-sm font-bold rounded px-2 py-1 focus:outline-none shadow-sm cursor-pointer w-24">
-                            <option value="0.5">0.5 km</option>
-                            <option value="1.0" selected>1.0 km</option>
-                            <option value="2.0">2.0 km</option>
-                            <option value="5.0">5.0 km</option>
-                        </select>
-                    </div>
+                    美食決策導航
+                </h1>
+                <div id="food-gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                     <i class="fas fa-map-marker-alt"></i> 待命
                 </div>
             </div>
         </header>
+
+        <!-- 統一控制列風格 -->
+        <section class="bg-white border-b border-gray-200 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    <!-- 評分篩選 -->
+                    <div class="flex-none w-32">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                            </div>
+                            <select id="rating-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2">
+                                <option value="3.0">3.0+ ⭐</option>
+                                <option value="3.5">3.5+ ⭐</option>
+                                <option value="3.8" selected>3.8+ ⭐</option>
+                                <option value="4.0">4.0+ ⭐</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- 距離篩選 -->
+                    <div class="flex-none w-32">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                                <i class="fas fa-ruler-horizontal text-blue-400 text-xs"></i>
+                            </div>
+                            <select id="distance-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2">
+                                <option value="0.5">0.5 km</option>
+                                <option value="1.0" selected>1.0 km</option>
+                                <option value="2.0">2.0 km</option>
+                                <option value="5.0">5.0 km</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- 重新整理按鈕 -->
+                    <button onclick="initApp()" class="flex-none bg-orange-50 text-orange-600 hover:bg-orange-100 px-3 py-2 rounded-lg text-sm font-medium transition ml-auto">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <main class="flex-grow overflow-y-auto p-4 pb-24" id="main-container">
             <div class="max-w-2xl mx-auto w-full">
                 <div id="status-msg" class="mb-4 text-center text-sm text-gray-500 hidden flex items-center justify-center gap-2">
-                    <i class="fas fa-map-marker-alt"></i> <span id="location-text">定位中...</span>
+                    <i class="fas fa-location-arrow text-orange-500"></i> <span id="location-text">定位中...</span>
                 </div>
-                <div class="sticky top-0 bg-[#f3f4f6] pt-2 pb-4 z-10 category-scroll gap-2 mb-2 hidden" id="category-tabs"></div>
+                <div class="sticky top-0 bg-gray-50 pt-2 pb-4 z-10 category-scroll gap-2 mb-2 hidden" id="category-tabs"></div>
                 <div id="content-area" class="space-y-6"></div>
             </div>
         </main>
+
         <div id="loading-overlay" class="absolute inset-0 bg-white z-20 flex flex-col items-center justify-center hidden">
             <div class="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
             <p class="text-gray-600 font-medium animate-pulse">正在搜尋周邊美食...</p>
         </div>
+        
         <template id="no-results-template">
             <div class="text-center py-10 text-gray-400 fade-in">
                 <i class="fas fa-search fa-3x mb-3 opacity-30"></i>
@@ -165,66 +197,77 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 視圖 3: 景點探索導航 (新功能) -->
+    <!-- 視圖 3: 景點探索導航 -->
     <!-- ========================================== -->
-    <div id="view-attractions" class="hidden flex-1 flex flex-col bg-[#f3f4f6] relative overflow-hidden">
-        <header class="bg-white shadow-md sticky top-0 z-50 flex-none">
-            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <i data-lucide="map" class="text-blue-600 w-6 h-6"></i>
-                    <h1 class="text-xl font-bold text-gray-800">景點探索導航</h1>
-                </div>
+    <div id="view-attractions" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
+        <!-- 統一 Header 風格 -->
+        <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    景點探索導航
+                </h1>
                 <div id="gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
-                    <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...
+                    <i class="fas fa-circle-notch fa-spin"></i> 待命
                 </div>
             </div>
         </header>
 
+        <!-- 統一控制列風格 -->
         <section class="bg-white border-b border-gray-200 flex-none">
-            <div class="max-w-7xl mx-auto px-4 py-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-gray-700 flex justify-between">
-                            <span>搜尋半徑 (公里)</span>
-                            <span id="radius-val" class="text-blue-600">5 km</span>
-                        </label>
-                        <input type="range" id="radius-input" min="1" max="30" value="5" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+            <div class="max-w-7xl mx-auto px-4 py-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- 半徑 -->
+                    <div class="flex flex-col justify-center">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-medium text-gray-500">搜尋半徑</span>
+                            <span id="radius-val" class="text-xs font-bold text-blue-600">5 km</span>
+                        </div>
+                        <input type="range" id="radius-input" min="1" max="30" value="5" step="1" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
                     </div>
-                    <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-gray-700">最低 Google 評分</label>
-                        <select id="rating-input" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                            <option value="3.8">⭐ 3.8 以上</option>
-                            <option value="4.0">⭐ 4.0 以上</option>
-                            <option value="4.2">⭐ 4.2 以上</option>
-                            <option value="4.5">⭐ 4.5 以上</option>
+                    
+                    <!-- 評分 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                             <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        </div>
+                        <select id="rating-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2">
+                            <option value="3.8">3.8+ ⭐</option>
+                            <option value="4.0">4.0+ ⭐</option>
+                            <option value="4.2">4.2+ ⭐</option>
+                            <option value="4.5">4.5+ ⭐</option>
                         </select>
                     </div>
-                    <div class="flex items-end">
-                        <button onclick="attractionApp.refreshLocation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 transform">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> 更新位置與搜尋
-                        </button>
-                    </div>
+
+                    <!-- 按鈕 -->
+                    <button onclick="attractionApp.refreshLocation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
+                    </button>
                 </div>
             </div>
         </section>
 
         <main class="flex-grow overflow-y-auto px-4 py-6 w-full pb-24">
-            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Column 1 -->
                 <div class="flex flex-col space-y-4">
                     <div class="flex items-center space-x-2 pb-2 border-b-2 border-amber-400">
-                        <div class="p-2 bg-amber-100 rounded-lg text-amber-600"><i data-lucide="ticket" class="w-6 h-6"></i></div>
-                        <div><h2 class="text-xl font-bold text-gray-800">付費探索</h2><p class="text-xs text-gray-500">博物館、展覽、遊樂園</p></div>
+                        <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600"><i class="fas fa-ticket-alt"></i></div>
+                        <div><h2 class="text-lg font-bold text-gray-800">付費探索</h2></div>
                         <span id="count-paid" class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
                     </div>
-                    <div id="list-paid" class="space-y-4 min-h-[200px]"></div>
+                    <div id="list-paid" class="space-y-3 min-h-[100px]"></div>
                 </div>
+                <!-- Column 2 -->
                 <div class="flex flex-col space-y-4">
                     <div class="flex items-center space-x-2 pb-2 border-b-2 border-emerald-400">
-                        <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600"><i data-lucide="trees" class="w-6 h-6"></i></div>
-                        <div><h2 class="text-xl font-bold text-gray-800">免費漫遊</h2><p class="text-xs text-gray-500">公園、地標、自然景觀</p></div>
+                        <div class="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><i class="fas fa-tree"></i></div>
+                        <div><h2 class="text-lg font-bold text-gray-800">免費漫遊</h2></div>
                         <span id="count-free" class="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
                     </div>
-                    <div id="list-free" class="space-y-4 min-h-[200px]"></div>
+                    <div id="list-free" class="space-y-3 min-h-[100px]"></div>
                 </div>
             </div>
         </main>
@@ -235,16 +278,16 @@
     <!-- ========================================== -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 pb-safe">
         <div class="flex justify-around items-center h-16">
-            <button onclick="switchApp('ev')" id="nav-ev" class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200">
-                <i class="fas fa-charging-station text-xl mb-1"></i>
+            <button onclick="switchApp('ev')" id="nav-ev" class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200 group">
+                <i class="fas fa-charging-station text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">充電導航</span>
             </button>
-            <button onclick="switchApp('food')" id="nav-food" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200">
-                <i class="fas fa-utensils text-xl mb-1"></i>
+            <button onclick="switchApp('food')" id="nav-food" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group">
+                <i class="fas fa-utensils text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">美食決策</span>
             </button>
-            <button onclick="switchApp('attractions')" id="nav-attractions" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200">
-                <i class="fas fa-map-marked-alt text-xl mb-1"></i>
+            <button onclick="switchApp('attractions')" id="nav-attractions" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group">
+                <i class="fas fa-map-marked-alt text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">景點探索</span>
             </button>
         </div>
@@ -271,9 +314,9 @@
             attrView.classList.add('hidden');
 
             // 重置導航樣式
-            navEv.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-green-600 transition-colors duration-200";
-            navFood.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200";
-            navAttr.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200";
+            navEv.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-green-600 transition-colors duration-200 group";
+            navFood.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group";
+            navAttr.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group";
 
             if (appName === 'ev') {
                 evView.classList.remove('hidden');
@@ -289,8 +332,6 @@
                 navAttr.classList.remove('text-gray-400');
                 navAttr.classList.add('text-blue-600');
                 if (!isAttractionAppInitialized) { attractionApp.init(); isAttractionAppInitialized = true; }
-                // 確保 Lucide Icons 渲染
-                if (window.lucide) lucide.createIcons();
             }
         }
 
@@ -367,11 +408,15 @@
                 document.getElementById('location-text').innerText = `目前位置: ${foodUserLocation.lat.toFixed(4)}, ${foodUserLocation.lng.toFixed(4)}`;
                 allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
                 applyFilters();
+                // Update GPS status on success
+                document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-map-marker-alt text-green-500"></i> 定位成功';
             } catch (e) {
                 foodUserLocation = { lat: 25.0478, lng: 121.5170 };
                 document.getElementById('location-text').innerText = "使用預設位置 (台北)";
                 allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
                 applyFilters();
+                // Update GPS status on fail
+                document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-exclamation-circle text-orange-500"></i> 模擬位置';
             }
             setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); document.getElementById('category-tabs').classList.remove('hidden'); document.getElementById('status-msg').classList.remove('hidden'); }, 800);
         }
@@ -379,9 +424,19 @@
             let data = [];
             Object.keys(FOOD_CONFIG.categories).forEach(type => {
                 for(let i=0; i<10; i++) {
+                    // 使用 EV 模組的路名庫產生隨機地址
+                    const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
+                    const address = `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`;
+                    
                     data.push({
-                        name: `${FOOD_CONFIG.categories[type].name} ${i+1}號店`, type, lat: lat+(Math.random()-0.5)*0.03, lng: lng+(Math.random()-0.5)*0.03,
-                        rating: (3.5+Math.random()*1.5).toFixed(1), reviews: Math.floor(Math.random()*500), address: "模擬地址...", isOpen: Math.random()>0.2
+                        name: `${FOOD_CONFIG.categories[type].name} ${i+1}號店`, 
+                        type, 
+                        lat: lat+(Math.random()-0.5)*0.03, 
+                        lng: lng+(Math.random()-0.5)*0.03,
+                        rating: (3.5+Math.random()*1.5).toFixed(1), 
+                        reviews: Math.floor(Math.random()*500), 
+                        address: address, // 加入生成的地址
+                        isOpen: Math.random()>0.2
                     });
                 }
             });
@@ -405,16 +460,33 @@
             Object.keys(data).forEach((key, idx) => {
                 const items = data[key];
                 tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx===0?'bg-orange-600 text-white':'bg-white text-gray-600'}"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
-                let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold">${FOOD_CONFIG.categories[key].name}</h2></div>`;
+                let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold text-gray-800">${FOOD_CONFIG.categories[key].name}</h2></div>`;
                 items.slice(0, 5).forEach(item => {
-                    html += `<div class="bg-white rounded-xl p-4 shadow-sm mb-3"><div class="flex justify-between"><div><h3 class="font-bold">${item.name}</h3><div class="text-sm text-gray-500"><i class="fas fa-star text-yellow-400"></i> ${item.rating} (${item.reviews})</div></div><span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit">${item.distance} km</span></div><div class="mt-2 pt-2 border-t flex justify-end"><a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="bg-blue-600 text-white px-4 py-1 rounded text-sm">出發</a></div></div>`;
+                    html += `
+                    <div class="bg-white rounded-xl p-4 shadow-sm mb-3 border border-gray-100 card-hover">
+                        <div class="flex justify-between">
+                            <div>
+                                <h3 class="font-bold text-gray-800">${item.name}</h3>
+                                <div class="text-sm text-gray-500 mt-1"><i class="fas fa-star text-yellow-400"></i> ${item.rating} (${item.reviews})</div>
+                            </div>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit text-gray-600">${item.distance} km</span>
+                        </div>
+                        <!-- 新增地址顯示區塊 -->
+                        <div class="text-sm text-gray-600 mt-2 flex items-center">
+                            <i class="fas fa-map-marker-alt w-5 text-center mr-1 opacity-70"></i>
+                            <span class="truncate">${item.address}</span>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm">出發 <i class="fas fa-location-arrow ml-1"></i></a>
+                        </div>
+                    </div>`;
                 });
                 container.innerHTML += html + '</section>';
             });
         }
 
         // ==========================================
-        // 景點探索導航功能程式碼 (新整合)
+        // 景點探索導航功能程式碼
         // ==========================================
         const POI_DATABASE = [
             { id: 1, name: "當代藝術館", rating: 4.3, type: "美術館", isPaid: true, price: "$100", address: "台北市大同區長安西路39號", lat: 25.0504, lng: 121.5186 },
@@ -448,12 +520,11 @@
                 this.dom.ratingInput.addEventListener('change', (e) => { this.minRating = parseFloat(e.target.value); this.render(); });
             },
             refreshLocation() {
-                this.dom.gpsStatus.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...';
-                if(window.lucide) lucide.createIcons();
+                this.dom.gpsStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 定位中...';
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
-                        (p) => { this.userPos = { lat: p.coords.latitude, lng: p.coords.longitude }; this.dom.gpsStatus.innerHTML = '<i data-lucide="map-pin" class="w-3 h-3 text-green-600"></i> 定位成功'; this.render(); if(window.lucide) lucide.createIcons(); },
-                        (e) => { this.dom.gpsStatus.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 text-orange-500"></i> 使用模擬位置'; this.render(); if(window.lucide) lucide.createIcons(); }
+                        (p) => { this.userPos = { lat: p.coords.latitude, lng: p.coords.longitude }; this.dom.gpsStatus.innerHTML = '<i class="fas fa-map-marker-alt text-green-600"></i> 定位成功'; this.render(); },
+                        (e) => { this.dom.gpsStatus.innerHTML = '<i class="fas fa-exclamation-circle text-orange-500"></i> 模擬位置'; this.render(); }
                     );
                 }
             },
@@ -461,10 +532,8 @@
                 return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2)); // 重用主程式函式
             },
             render() {
-                // 為了模擬更真實，這裡我們動態產生一些基於使用者位置的假景點，因為 POI_DATABASE 座標是固定的
-                // 實務上這裡會是 API 請求，這邊混合使用固定資料庫 + 隨機偏移來模擬
+                // 為了模擬更真實，這裡我們動態產生一些基於使用者位置的假景點
                 const processedData = POI_DATABASE.map(place => {
-                    // 加上微小隨機偏移讓每次定位距離不同 (模擬)
                     const lat = place.lat + (Math.random()-0.5)*0.05;
                     const lng = place.lng + (Math.random()-0.5)*0.05;
                     const dist = this.calculateDistance(this.userPos.lat, this.userPos.lng, lat, lng);
@@ -480,35 +549,32 @@
                 this.dom.countFree.textContent = freePlaces.length;
                 this.dom.listPaid.innerHTML = paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('');
                 this.dom.listFree.innerHTML = freePlaces.map(p => this.createCardHTML(p, 'free')).join('');
-                
-                if(window.lucide) lucide.createIcons();
             },
             createCardHTML(place, type) {
                 const isPaid = type === 'paid';
-                const borderColor = isPaid ? 'border-amber-200 hover:border-amber-400' : 'border-emerald-200 hover:border-emerald-400';
-                const badgeColor = isPaid ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+                const borderColor = isPaid ? 'border-amber-200 hover:border-amber-300' : 'border-emerald-200 hover:border-emerald-300';
                 const btnColor = isPaid ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700';
-                const icon = isPaid ? 'ticket' : 'trees';
+                const icon = isPaid ? 'fa-ticket-alt' : 'fa-tree';
                 
                 return `
                     <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 ${borderColor} bg-white shadow-sm transition-all duration-200">
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h3 class="font-bold text-gray-800 text-lg leading-tight">${place.name}</h3>
-                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1"><i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${place.type}</span>
+                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1"><i class="fas ${icon} mr-1"></i> ${place.type}</span>
                             </div>
                             <div class="flex items-center bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
-                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-current mr-1"></i><span class="font-bold text-gray-700 text-sm">${place.rating}</span>
+                                <i class="fas fa-star text-yellow-400 text-sm mr-1"></i><span class="font-bold text-gray-700 text-sm">${place.rating}</span>
                             </div>
                         </div>
                         <div class="mt-2 text-sm text-gray-600 space-y-2">
-                            <div class="flex items-center"><i data-lucide="banknote" class="w-4 h-4 mr-2 opacity-70"></i><span class="${isPaid ? 'font-medium text-gray-800' : 'text-emerald-600 font-medium'}">${place.price}</span></div>
-                            <div class="flex items-start"><i data-lucide="map-pin" class="w-4 h-4 mr-2 opacity-70 mt-0.5"></i><span class="text-xs text-gray-500 line-clamp-1">${place.address}</span></div>
-                            <div class="flex items-center"><i data-lucide="route" class="w-4 h-4 mr-2 opacity-70"></i><span>距離: <strong>${place.distance} km</strong></span></div>
+                            <div class="flex items-center"><i class="fas fa-money-bill-wave w-5 text-center mr-1 opacity-70"></i><span class="${isPaid ? 'font-medium text-gray-800' : 'text-emerald-600 font-medium'}">${place.price}</span></div>
+                            <div class="flex items-start"><i class="fas fa-map-marker-alt w-5 text-center mr-1 opacity-70 mt-0.5"></i><span class="text-xs text-gray-500 line-clamp-1">${place.address}</span></div>
+                            <div class="flex items-center"><i class="fas fa-route w-5 text-center mr-1 opacity-70"></i><span>距離: <strong>${place.distance} km</strong></span></div>
                         </div>
                         <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                              <span class="text-xs text-gray-400">#${type === 'paid' ? '付費' : '免費'}</span>
-                             <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" target="_blank" class="${btnColor} text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">導航 <i data-lucide="navigation" class="w-3 h-3 ml-2"></i></a>
+                             <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" target="_blank" class="${btnColor} text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">導航 <i class="fas fa-location-arrow ml-2"></i></a>
                         </div>
                     </div>`;
             }
