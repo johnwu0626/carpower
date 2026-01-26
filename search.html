@@ -515,8 +515,8 @@
 
                     const request = {
                         location: center,
-                        radius: 5000, // 5km search for EV
-                        type: 'charging_station'
+                        radius: 5000,
+                        keyword: 'charging station'
                     };
 
                     service.nearbySearch(request, (results, status) => {
