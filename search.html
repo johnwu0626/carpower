@@ -772,7 +772,7 @@
             if (Object.keys(data).length === 0) { container.innerHTML = document.getElementById('no-results-template').innerHTML; return; }
             Object.keys(data).forEach((key, idx) => {
                 const items = data[key];
-                tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx === 0 ? 'bg-orange-600 text-white' : 'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
+                tabs.innerHTML += `<a href="#cat-${key}" onclick="switchCategoryTab(this)" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx === 0 ? 'bg-orange-600 text-white active-tab' : 'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
                 let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold text-gray-800">${FOOD_CONFIG.categories[key].name}</h2></div>`;
                 items.slice(0, 5).forEach(item => {
                     html += `
@@ -795,6 +795,17 @@
                 });
                 container.innerHTML += html + '</section>';
             });
+        }
+
+        function switchCategoryTab(el) {
+            // 移除所有 Tab 的 Active 樣式
+            document.querySelectorAll('#category-tabs a').forEach(tab => {
+                tab.classList.remove('bg-orange-600', 'text-white', 'active-tab');
+                tab.classList.add('bg-white', 'text-gray-600');
+            });
+            // 為點擊的 Tab 加上 Active 樣式
+            el.classList.remove('bg-white', 'text-gray-600');
+            el.classList.add('bg-orange-600', 'text-white', 'active-tab');
         }
 
         // ==========================================
