@@ -224,12 +224,12 @@
             </div>
         </header>
 
-        <!-- 統一控制列 (Grid Layout) -->
+        <!-- 統一控制列 -->
         <section class="bg-white border-b border-gray-200 flex-none">
             <div class="max-w-2xl mx-auto px-4 py-3">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     
-                    <!-- 縣市篩選 (已更新為縣市) -->
+                    <!-- 縣市篩選 -->
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                              <i class="fas fa-map text-gray-400 text-xs"></i>
@@ -315,9 +315,7 @@
         </main>
     </div>
 
-    <!-- ========================================== -->
     <!-- 底部功能選單 -->
-    <!-- ========================================== -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 pb-safe">
         <div class="flex justify-around items-center h-16">
             <button onclick="switchApp('ev')" id="nav-ev" class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200 group">
@@ -503,9 +501,14 @@
         // ==========================================
         // 美食決策導航功能程式碼
         // ==========================================
+        
+        // [設定] 請在此填入您的 Google Maps API Key
+        // 若留空 ("")，系統將自動切換回「模擬數據模式」供演示使用
+        const GOOGLE_API_KEY = "AIzaSyAHA3Q-CwqIh9UKJcDimu0x0XBPi-ATwqo"; 
+
         const FOOD_CONFIG = { categories: { 'chinese': { name: '中式料理', icon: 'fa-bowl-rice' }, 'japanese': { name: '日式料理', icon: 'fa-fish' }, 'western': { name: '西式/速食', icon: 'fa-burger' }, 'cafe': { name: '咖啡/甜點', icon: 'fa-mug-hot' }, 'snack': { name: '在地小吃', icon: 'fa-cookie-bite' } } };
         
-        // 新增真實餐廳名稱資料庫
+        // 真實餐廳名稱資料庫 (模擬模式使用)
         const MOCK_RESTAURANT_NAMES = {
             'chinese': ["鼎泰豐", "鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "瓦城泰國料理", "饗食天堂", "這一鍋", "海底撈", "老四川", "朱記餡餅粥", "段純貞牛肉麵", "春水堂", "點水樓"],
             'japanese': ["壽司郎", "藏壽司", "一蘭拉麵", "丸龜製麵", "吉野家", "Sukiya食其家", "爭鮮迴轉壽司", "定食8", "大戶屋", "勝博殿", "銀座杏子日式豬排", "花月嵐拉麵", "屯京拉麵", "麵屋一燈", "牛角燒肉"],
@@ -516,24 +519,123 @@
 
         let foodUserLocation = null, allRestaurants = [];
         
+        // [新增] 動態載入 Google Maps SDK
+        function loadGoogleMapsAPI() {
+            return new Promise((resolve, reject) => {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                // 載入 places library
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places&language=zh-TW`;
+                script.async = true;
+                script.defer = true;
+                script.onload = resolve;
+                script.onerror = (e) => reject(new Error("Google Maps Script Load Error"));
+                document.head.appendChild(script);
+            });
+        }
+
+        // [新增] 呼叫 Google Places Service
+        function fetchGooglePlaces(lat, lng) {
+            return new Promise((resolve) => {
+                const center = new google.maps.LatLng(lat, lng);
+                // 建立隱藏的 div 供 PlacesService 掛載
+                const mapDiv = document.createElement('div');
+                const service = new google.maps.places.PlacesService(mapDiv);
+                
+                const request = {
+                    location: center,
+                    radius: '1500', // 搜尋半徑 1.5km
+                    type: ['restaurant', 'cafe', 'bakery', 'meal_takeaway', 'food']
+                };
+
+                service.nearbySearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                        const googleData = results.map(place => transformGooglePlace(place));
+                        resolve(googleData);
+                    } else {
+                        console.warn("Google API 查無結果或失敗:", status);
+                        resolve(null); // 失敗回傳 null 以便切換回 Mock
+                    }
+                });
+            });
+        }
+
+        // [新增] 轉換 Google 資料格式
+        function transformGooglePlace(place) {
+            let type = 'chinese'; // 預設分類
+            const name = place.name;
+            const types = place.types || [];
+            
+            // 簡易分類邏輯
+            if (types.includes('cafe') || types.includes('bakery') || name.includes('咖啡')) type = 'cafe';
+            else if (name.match(/(漢堡|比薩|義大利|牛排|Burger|Pizza|Pasta|麥當勞|肯德基)/i)) type = 'western';
+            else if (name.match(/(壽司|拉麵|日式|丼|Sushi|Ramen|居酒屋)/i)) type = 'japanese';
+            else if (name.match(/(雞排|小吃|豆花|臭豆腐|麵線|滷味)/i)) type = 'snack';
+            
+            return {
+                name: place.name,
+                type: type,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                rating: place.rating || 0,
+                reviews: place.user_ratings_total || 0,
+                address: place.vicinity || "地址載入中...",
+                isOpen: place.opening_hours ? place.opening_hours.open_now : true
+            };
+        }
+
         async function initApp() {
             document.getElementById('loading-overlay').classList.remove('hidden');
+            const statusLabel = document.getElementById('food-gps-status');
+            
             try {
                 const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
                 foodUserLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 document.getElementById('location-text').innerText = `目前位置: ${foodUserLocation.lat.toFixed(4)}, ${foodUserLocation.lng.toFixed(4)}`;
-                allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                
+                // [邏輯判斷] 有 Key 則使用 Google API，否則使用 Mock
+                if (GOOGLE_API_KEY && GOOGLE_API_KEY.length > 0) {
+                    try {
+                        await loadGoogleMapsAPI();
+                        statusLabel.innerHTML = '<i class="fas fa-cloud-download-alt text-blue-500"></i> Google數據';
+                        
+                        const googleData = await fetchGooglePlaces(foodUserLocation.lat, foodUserLocation.lng);
+                        if (googleData) {
+                            allRestaurants = googleData;
+                        } else {
+                            throw new Error("Google API returned no results");
+                        }
+                    } catch (err) {
+                        console.error("Google API Error (Fallback to Mock):", err);
+                        statusLabel.innerHTML = '<i class="fas fa-exclamation-triangle text-orange-500"></i> 模擬數據';
+                        allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                    }
+                } else {
+                    // 無 Key 狀態
+                    statusLabel.innerHTML = '<i class="fas fa-robot text-gray-500"></i> 模擬數據';
+                    allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                }
+
+                // 統一計算距離
+                allRestaurants.forEach(d => d.distance = calculateHaversineDistance(foodUserLocation.lat, foodUserLocation.lng, d.lat, d.lng));
                 applyFilters();
-                document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-map-marker-alt text-green-500"></i> 定位成功';
+                
             } catch (e) {
+                // 定位失敗 Fallback
                 foodUserLocation = { lat: 25.0478, lng: 121.5170 };
                 document.getElementById('location-text').innerText = "使用預設位置 (台北)";
                 allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                allRestaurants.forEach(d => d.distance = calculateHaversineDistance(foodUserLocation.lat, foodUserLocation.lng, d.lat, d.lng));
                 applyFilters();
-                document.getElementById('food-gps-status').innerHTML = '<i class="fas fa-exclamation-circle text-orange-500"></i> 模擬位置';
+                statusLabel.innerHTML = '<i class="fas fa-robot text-gray-500"></i> 模擬數據';
             }
+            
             setTimeout(() => { document.getElementById('loading-overlay').classList.add('hidden'); document.getElementById('category-tabs').classList.remove('hidden'); document.getElementById('status-msg').classList.remove('hidden'); }, 800);
         }
+
         function generateMockFoodData(lat, lng) {
             let data = [];
             Object.keys(FOOD_CONFIG.categories).forEach(type => {
@@ -556,7 +658,6 @@
                     });
                 }
             });
-            data.forEach(d => d.distance = calculateHaversineDistance(lat, lng, d.lat, d.lng));
             return data;
         }
         function applyFilters() {
@@ -646,9 +747,7 @@
 
         const attractionApp = {
             userPos: { lat: 25.0478, lng: 121.5170 },
-            currentRadius: 30, // 預設半徑調大，方便搜尋較遠景點
-            minRating: 3.8,
-            currentDistrict: 'all', // 新增行政區狀態
+            currentRadius: 30, minRating: 3.8, currentDistrict: 'all',
             
             init() {
                 this.cacheDOM(); 
@@ -722,7 +821,6 @@
                 this.dom.listFree.innerHTML = freePlaces.length ? freePlaces.map(p => this.createCardHTML(p, 'free')).join('') : '<p class="text-gray-400 text-center py-4">無符合條件的景點</p>';
             },
             createCardHTML(place, type) {
-                // ... (保持原有的卡片 HTML 生成邏輯，完全相同) ...
                 const isPaid = type === 'paid';
                 const borderColor = isPaid ? 'border-amber-200 hover:border-amber-300' : 'border-emerald-200 hover:border-emerald-300';
                 const btnColor = 'bg-blue-600 hover:bg-blue-700 text-white';
