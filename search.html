@@ -516,10 +516,10 @@
                     const request = {
                         location: center,
                         radius: 5000,
-                        keyword: 'charging station'
+                        query: '電動車充電站'
                     };
 
-                    service.nearbySearch(request, (results, status) => {
+                    service.textSearch(request, (results, status) => {
                         if (status === google.maps.places.PlacesServiceStatus.OK && results) {
                             resolve(results);
                         } else {
@@ -556,7 +556,7 @@
                             name: place.name,
                             lat: place.geometry.location.lat(),
                             lng: place.geometry.location.lng(),
-                            address: place.vicinity,
+                            address: place.formatted_address || place.vicinity,
                             type,
                             price,
                             brandType
