@@ -565,15 +565,25 @@
         // AIza... 為範例，若無效或未啟用，系統會自動切換回 Mock Mode
         const GOOGLE_API_KEY = "AIzaSyAHA3Q-CwqIh9UKJcDimu0x0XBPi-ATwqo";
 
-        const FOOD_CONFIG = { categories: { 'chinese': { name: '中式料理', icon: 'fa-bowl-rice' }, 'japanese': { name: '日式料理', icon: 'fa-fish' }, 'western': { name: '西式/速食', icon: 'fa-burger' }, 'cafe': { name: '咖啡/甜點', icon: 'fa-mug-hot' }, 'snack': { name: '在地小吃', icon: 'fa-cookie-bite' } } };
+        const FOOD_CONFIG = {
+            categories: {
+                'hotpot': { name: '火鍋燒烤', icon: 'fa-fire' },
+                'taiwanese': { name: '台式麵飯', icon: 'fa-bowl-rice' },
+                'breakfast': { name: '早午餐', icon: 'fa-egg' },
+                'drinks': { name: '手搖咖啡', icon: 'fa-mug-hot' },
+                'snack': { name: '在地小吃', icon: 'fa-cookie-bite' },
+                'exotic': { name: '異國料理', icon: 'fa-earth-asia' }
+            }
+        };
 
         // 真實餐廳名稱資料庫 (模擬模式使用)
         const MOCK_RESTAURANT_NAMES = {
-            'chinese': ["鼎泰豐", "鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "瓦城泰國料理", "饗食天堂", "這一鍋", "海底撈", "老四川", "朱記餡餅粥", "段純貞牛肉麵", "春水堂", "點水樓"],
-            'japanese': ["壽司郎", "藏壽司", "一蘭拉麵", "丸龜製麵", "吉野家", "Sukiya食其家", "爭鮮迴轉壽司", "定食8", "大戶屋", "勝博殿", "銀座杏子日式豬排", "花月嵐拉麵", "屯京拉麵", "麵屋一燈", "牛角燒肉"],
-            'western': ["麥當勞", "肯德基 KFC", "漢堡王", "必勝客 Pizza Hut", "達美樂 Domino's", "摩斯漢堡 MOS Burger", "Subway", "TGI Fridays", "金色三麥", "貳樓餐廳 Second Floor", "GB鮮釀餐廳", "Chili's", "Texas Roadhouse", "N.Y. Bagels", "樂子 the Diner"],
-            'cafe': ["星巴克 Starbucks", "路易莎咖啡 Louisa", "85度C", "Cama Café", "多那之咖啡", "50嵐", "可不可熟成紅茶", "麻古茶坊", "迷客夏", "珍煮丹", "茶湯會", "清心福全", "萬波島嶼紅茶", "龜記茗品", "五桐號"],
-            'snack': ["豪大雞排", "繼光香香雞", "阿宗麵線", "派克雞排", "胖老爹美式炸雞", "師園鹽酥雞", "天使雞排", "晴光紅豆餅", "艋舺雞排", "洪瑞珍三明治", "燈籠滷味", "老天祿滷味", "阿給老店", "深坑臭豆腐", "柯氏蔥油餅"]
+            'hotpot': ["馬辣頂級麻辣鴛鴦火鍋", "這一鍋", "海底撈", "築間幸福鍋物", "石二鍋", "老四川", "屋馬燒肉", "乾杯燒肉", "原燒", "肉多多火鍋", "涮乃葉", "輕井澤鍋物", "三媽臭臭鍋", "錢都日式涮涮鍋", "牛角燒肉"],
+            'taiwanese': ["鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "朱記餡餅粥", "段純貞牛肉麵", "林東芳牛肉麵", "金峰魯肉飯", "欣葉台菜", "大戶屋", "悟饕池上飯包", "正忠排骨飯", "周氏蝦捲", "度小月"],
+            'breakfast': ["麥味登", "美而美", "拉亞漢堡", "早安美芝城", "弘爺漢堡", "Q Burger", "阜杭豆漿", "永和豆漿", "MOS Burger 摩斯漢堡", "麥當勞 Breakfast", "星巴克", "路易莎", "客美多咖啡", "貳樓餐廳 Second Floor", "樂子 the Diner"],
+            'drinks': ["星巴克 Starbucks", "路易莎 Louisa", "50嵐", "可不可熟成紅茶", "麻古茶坊", "迷客夏", "珍煮丹", "茶湯會", "清心福全", "萬波", "龜記茗品", "五桐號", "Cama Café", "春水堂", "天仁茗茶"],
+            'snack': ["豪大雞排", "繼光香香雞", "阿宗麵線", "派克雞排", "胖老爹美式炸雞", "師園鹽酥雞", "天使雞排", "晴光紅豆餅", "艋舺雞排", "洪瑞珍三明治", "燈籠滷味", "老天祿滷味", "淡水阿給", "深坑臭豆腐", "柯氏蔥油餅"],
+            'exotic': ["壽司郎", "藏壽司", "一蘭拉麵", "瓦城泰國料理", "涓豆腐", "起家雞", "必勝客 Pizza Hut", "肯德基 KFC", "TGI Fridays", "金色三麥", "Chili's", "Saizeriya 薩莉亞", "點點心", "鼎泰豐", "添好運"]
         };
 
         let foodUserLocation = null, allRestaurants = [];
@@ -638,14 +648,22 @@
         }
 
         function transformGooglePlace(place) {
-            let type = 'chinese';
+            let type = 'taiwanese'; // 預設為台式麵飯
             const name = place.name;
             const types = place.types || [];
+            const n = name.toLowerCase();
 
-            if (types.includes('cafe') || types.includes('bakery') || name.includes('咖啡')) type = 'cafe';
-            else if (name.match(/(漢堡|比薩|義大利|牛排|Burger|Pizza|Pasta|麥當勞|肯德基)/i)) type = 'western';
-            else if (name.match(/(壽司|拉麵|日式|丼|Sushi|Ramen|居酒屋)/i)) type = 'japanese';
-            else if (name.match(/(雞排|小吃|豆花|臭豆腐|麵線|滷味)/i)) type = 'snack';
+            // 1. 火鍋燒烤
+            if (n.match(/(鍋|涮涮|燒肉|烤肉|麻辣|羊肉爐|壽喜燒|hotpot|shabu|yakiniku)/)) type = 'hotpot';
+            // 2. 飲料咖啡甜點
+            else if (types.includes('cafe') || types.includes('bakery') || n.match(/(咖啡|茶|飲|星巴克|路易莎|50嵐|迷客夏|coco|cafe|coffee|tea)/)) type = 'drinks';
+            // 3. 早餐早午餐
+            else if (n.match(/(美而美|早餐|蛋餅|吐司|早午餐|brunch|漢堡|burger|三明治)/)) type = 'breakfast';
+            // 4. 小吃
+            else if (n.match(/(雞排|鹽酥雞|滷味|臭豆腐|豆花|紅豆餅|小吃|甜不辣|夜市|炸雞)/)) type = 'snack';
+            // 5. 異國料理 (日式/韓式/泰式/西式)
+            else if (n.match(/(壽司|拉麵|日式|丼|sushi|ramen|居酒屋|泰式|韓式|義式|美式|披薩|pizza|pasta|curry|咖哩|牛排|steak)/)) type = 'exotic';
+            // 6. 其他歸類為台式麵飯 (麵/飯/便當/水餃/熱炒/排骨)
 
             return {
                 name: place.name,
