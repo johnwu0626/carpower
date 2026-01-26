@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,17 +11,33 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- 引入 Noto Sans Font -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-    
+
     <style>
         /* 共用設定 */
-        body { font-family: 'Noto Sans TC', sans-serif; }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
         }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* 底部安全區 */
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
 
         /* 下拉選單自定義箭頭 */
         .custom-select {
@@ -38,6 +55,7 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
@@ -46,11 +64,12 @@
         .card-hover {
             transition: all 0.2s ease-in-out;
         }
+
         .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        
+
         /* 載入動畫 */
         .loader {
             border: 3px solid #f3f3f3;
@@ -60,9 +79,19 @@
             height: 24px;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
 
     <!-- ========================================== -->
@@ -78,7 +107,8 @@
                     </div>
                     EV 充電神探
                 </h1>
-                <div class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                <div
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
                     <i class="fas fa-wifi text-green-500"></i> 線上
                 </div>
             </div>
@@ -92,15 +122,18 @@
                         <i class="fas fa-info-circle mr-2 text-green-500"></i>
                         <span id="status-text">準備就緒</span>
                     </div>
-                    
-                    <button id="locate-btn" onclick="startLocationProcess()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 whitespace-nowrap">
+
+                    <button id="locate-btn" onclick="startLocationProcess()"
+                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 whitespace-nowrap">
                         <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
                     </button>
                 </div>
                 <!-- 錯誤訊息區塊 -->
-                <div id="error-container" class="hidden mt-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                <div id="error-container"
+                    class="hidden mt-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
                     <p id="error-msg" class="text-xs text-red-600 font-medium"></p>
-                    <button onclick="useDefaultLocation()" class="text-xs bg-white border border-red-200 text-red-600 px-2 py-1 rounded shadow-sm">
+                    <button onclick="useDefaultLocation()"
+                        class="text-xs bg-white border border-red-200 text-red-600 px-2 py-1 rounded shadow-sm">
                         使用預設位置
                     </button>
                 </div>
@@ -138,8 +171,9 @@
                     </div>
                     美食決策導航
                 </h1>
-                <div id="food-gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
-                     <i class="fas fa-map-marker-alt"></i> 待命
+                <div id="food-gps-status"
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-map-marker-alt"></i> 待命
                 </div>
             </div>
         </header>
@@ -153,7 +187,8 @@
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                             <i class="fas fa-star text-yellow-400 text-xs"></i>
                         </div>
-                        <select id="rating-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                        <select id="rating-select" onchange="applyFilters()"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
                             <option value="3.0">3.0+ ⭐</option>
                             <option value="3.5">3.5+ ⭐</option>
                             <option value="3.8" selected>3.8+ ⭐</option>
@@ -165,7 +200,8 @@
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                             <i class="fas fa-ruler-horizontal text-blue-400 text-xs"></i>
                         </div>
-                        <select id="distance-select" onchange="applyFilters()" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                        <select id="distance-select" onchange="applyFilters()"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
                             <option value="0.5">0.5 km</option>
                             <option value="1.0" selected>1.0 km</option>
                             <option value="2.0">2.0 km</option>
@@ -173,7 +209,8 @@
                         </select>
                     </div>
                     <!-- 統一的大按鈕 -->
-                    <button onclick="initApp()" class="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                    <button onclick="initApp()"
+                        class="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
                         <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
                     </button>
                 </div>
@@ -182,27 +219,31 @@
 
         <main class="flex-grow overflow-y-auto p-4 pb-24" id="main-container">
             <div class="max-w-2xl mx-auto w-full">
-                <div id="status-msg" class="mb-4 text-center text-sm text-gray-500 hidden flex items-center justify-center gap-2">
+                <div id="status-msg"
+                    class="mb-4 text-center text-sm text-gray-500 hidden flex items-center justify-center gap-2">
                     <i class="fas fa-location-arrow text-orange-500"></i> <span id="location-text">定位中...</span>
                 </div>
-                <div class="sticky top-0 bg-gray-50 pt-2 pb-4 z-10 category-scroll gap-2 mb-2 hidden" id="category-tabs"></div>
+                <div class="sticky top-0 bg-gray-50 pt-2 pb-4 z-10 category-scroll gap-2 mb-2 hidden"
+                    id="category-tabs"></div>
                 <div id="content-area" class="space-y-6"></div>
             </div>
         </main>
 
-        <div id="loading-overlay" class="absolute inset-0 bg-white z-20 flex flex-col items-center justify-center hidden">
+        <div id="loading-overlay"
+            class="absolute inset-0 bg-white z-20 flex flex-col items-center justify-center hidden">
             <div class="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
             <p class="text-gray-600 font-medium animate-pulse">正在搜尋周邊美食...</p>
             <p id="loading-subtext" class="text-xs text-gray-400 mt-2">連線資料庫中...</p>
         </div>
-        
+
         <template id="no-results-template">
             <div class="text-center py-12 text-gray-400 fade-in">
                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-search text-2xl text-gray-300"></i>
                 </div>
                 <p>哎呀！這個範圍內<br>找不到符合條件的餐廳</p>
-                <button onclick="initApp()" class="mt-4 text-orange-600 text-sm font-medium hover:underline">擴大範圍重試</button>
+                <button onclick="initApp()"
+                    class="mt-4 text-orange-600 text-sm font-medium hover:underline">擴大範圍重試</button>
             </div>
         </template>
     </div>
@@ -220,7 +261,8 @@
                     </div>
                     景點探索導航
                 </h1>
-                <div id="gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                <div id="gps-status"
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
                     <i class="fas fa-circle-notch fa-spin"></i> 待命
                 </div>
             </div>
@@ -230,13 +272,14 @@
         <section class="bg-white border-b border-gray-200 flex-none">
             <div class="max-w-2xl mx-auto px-4 py-3">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    
+
                     <!-- 縣市篩選 -->
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                             <i class="fas fa-map text-gray-400 text-xs"></i>
+                            <i class="fas fa-map text-gray-400 text-xs"></i>
                         </div>
-                        <select id="district-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                        <select id="district-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
                             <option value="all">全台縣市 (不限)</option>
                             <option value="台北市">台北市</option>
                             <option value="新北市">新北市</option>
@@ -266,9 +309,10 @@
                     <!-- 評分 -->
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                             <i class="fas fa-star text-yellow-400 text-xs"></i>
+                            <i class="fas fa-star text-yellow-400 text-xs"></i>
                         </div>
-                        <select id="rating-input" class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                        <select id="rating-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
                             <option value="3.8">3.8+ ⭐</option>
                             <option value="4.0">4.0+ ⭐</option>
                             <option value="4.2">4.2+ ⭐</option>
@@ -282,11 +326,13 @@
                             <span class="text-xs font-medium text-gray-500">搜尋半徑</span>
                             <span id="radius-val" class="text-xs font-bold text-blue-600">30 km</span>
                         </div>
-                        <input type="range" id="radius-input" min="1" max="50" value="30" step="1" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        <input type="range" id="radius-input" min="1" max="50" value="30" step="1"
+                            class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
                     </div>
 
                     <!-- 按鈕 -->
-                    <button onclick="attractionApp.refreshLocation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                    <button onclick="attractionApp.refreshLocation()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
                         <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
                     </button>
                 </div>
@@ -298,18 +344,25 @@
                 <!-- 統一為單欄流式佈局 -->
                 <div class="space-y-4">
                     <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
-                        <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600"><i class="fas fa-ticket-alt"></i></div>
-                        <div><h2 class="text-base font-bold text-gray-800">付費探索</h2></div>
-                        <span id="count-paid" class="ml-auto bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-full border border-amber-100">0</span>
+                        <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600"><i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800">付費探索</h2>
+                        </div>
+                        <span id="count-paid"
+                            class="ml-auto bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-full border border-amber-100">0</span>
                     </div>
                     <div id="list-paid" class="space-y-3"></div>
                 </div>
-                
+
                 <div class="space-y-4">
                     <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
                         <div class="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><i class="fas fa-tree"></i></div>
-                        <div><h2 class="text-base font-bold text-gray-800">免費漫遊</h2></div>
-                        <span id="count-free" class="ml-auto bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full border border-emerald-100">0</span>
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800">免費漫遊</h2>
+                        </div>
+                        <span id="count-free"
+                            class="ml-auto bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full border border-emerald-100">0</span>
                     </div>
                     <div id="list-free" class="space-y-3"></div>
                 </div>
@@ -318,17 +371,21 @@
     </div>
 
     <!-- 底部功能選單 -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 pb-safe">
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 pb-safe">
         <div class="flex justify-around items-center h-16">
-            <button onclick="switchApp('ev')" id="nav-ev" class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200 group">
+            <button onclick="switchApp('ev')" id="nav-ev"
+                class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200 group">
                 <i class="fas fa-charging-station text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">充電導航</span>
             </button>
-            <button onclick="switchApp('food')" id="nav-food" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group">
+            <button onclick="switchApp('food')" id="nav-food"
+                class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group">
                 <i class="fas fa-utensils text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">美食決策</span>
             </button>
-            <button onclick="switchApp('attractions')" id="nav-attractions" class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group">
+            <button onclick="switchApp('attractions')" id="nav-attractions"
+                class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group">
                 <i class="fas fa-map-marked-alt text-xl mb-1 group-active:scale-95 transition-transform"></i>
                 <span class="text-xs font-medium">景點探索</span>
             </button>
@@ -345,7 +402,7 @@
             const evView = document.getElementById('view-ev');
             const foodView = document.getElementById('view-food');
             const attrView = document.getElementById('view-attractions');
-            
+
             const navEv = document.getElementById('nav-ev');
             const navFood = document.getElementById('nav-food');
             const navAttr = document.getElementById('nav-attractions');
@@ -391,87 +448,87 @@
             const btn = document.getElementById('locate-btn');
             const statusText = document.getElementById('status-text');
             const errorContainer = document.getElementById('error-container');
-            
-            btn.disabled = true; 
-            btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-2"></div> 定位中...'; 
-            statusText.innerText = "正在取得 GPS..."; 
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-2"></div> 定位中...';
+            statusText.innerText = "正在取得 GPS...";
             errorContainer.classList.add('hidden');
 
             if (!navigator.geolocation) { handleError("此瀏覽器不支援定位"); return; }
-            
+
             navigator.geolocation.getCurrentPosition(
-                (position) => { 
-                    statusText.innerText = "已鎖定位置"; 
-                    generateAndRenderStations(position.coords.latitude, position.coords.longitude); 
+                (position) => {
+                    statusText.innerText = "已鎖定位置";
+                    generateAndRenderStations(position.coords.latitude, position.coords.longitude);
                     // Update button text to match standard
-                    btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋'; 
-                    btn.disabled = false; 
+                    btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋';
+                    btn.disabled = false;
                 },
-                (error) => { handleError("定位失敗，請確認權限"); }, 
+                (error) => { handleError("定位失敗，請確認權限"); },
                 { enableHighAccuracy: false, timeout: 15000 }
             );
         }
-        
+
         function useDefaultLocation() {
-            document.getElementById('error-container').classList.add('hidden'); 
+            document.getElementById('error-container').classList.add('hidden');
             document.getElementById('status-text').innerText = "使用預設位置 (蘆洲)";
-            generateAndRenderStations(25.08, 121.47); 
+            generateAndRenderStations(25.08, 121.47);
             const btn = document.getElementById('locate-btn');
             // Update button text to match standard
-            btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋'; 
+            btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋';
             btn.disabled = false;
         }
-        
+
         function handleError(msg) {
             const btn = document.getElementById('locate-btn');
-            btn.disabled = false; 
-            btn.innerHTML = '<i class="fas fa-redo mr-2"></i> 再試一次'; 
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo mr-2"></i> 再試一次';
             document.getElementById('status-text').innerText = "定位失敗";
-            document.getElementById('error-msg').innerText = msg; 
+            document.getElementById('error-msg').innerText = msg;
             document.getElementById('error-container').classList.remove('hidden');
         }
-        
+
         function generateAndRenderStations(userLat, userLng) {
-            document.getElementById('empty-state').classList.add('hidden'); 
+            document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('result-container').classList.remove('hidden');
-            const list = document.getElementById('station-list'); 
+            const list = document.getElementById('station-list');
             list.innerHTML = '';
-            
+
             let stations = [];
             for (let i = 0; i < 10; i++) {
                 const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
                 const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
                 stations.push({
-                    name: `${brand.name} (站點 ${String.fromCharCode(65+i)})`, 
-                    lat: userLat + (Math.random()-0.5)*0.04, 
-                    lng: userLng + (Math.random()-0.5)*0.04,
-                    price: brand.basePrice, 
-                    type: brand.type, 
-                    brandType: brand.name.includes("公有") ? "slow" : "fast", 
-                    address: `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`
+                    name: `${brand.name} (站點 ${String.fromCharCode(65 + i)})`,
+                    lat: userLat + (Math.random() - 0.5) * 0.04,
+                    lng: userLng + (Math.random() - 0.5) * 0.04,
+                    price: brand.basePrice,
+                    type: brand.type,
+                    brandType: brand.name.includes("公有") ? "slow" : "fast",
+                    address: `新北市蘆洲區${street}${Math.floor(Math.random() * 300) + 1}號`
                 });
             }
             stations.forEach(s => s.distance = calculateHaversineDistance(userLat, userLng, s.lat, s.lng));
             stations.sort((a, b) => a.distance - b.distance);
             stations.forEach((s, idx) => list.appendChild(createStationCard(s, idx)));
         }
-        
+
         function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
         }
-        
+
         // 統一後的 EV 卡片設計 (Matching Food/Attraction style)
         function createStationCard(s, index) {
-            const div = document.createElement('div'); 
-            div.className = "bg-white rounded-xl p-4 shadow-sm border border-gray-100 card-hover mb-3"; 
+            const div = document.createElement('div');
+            div.className = "bg-white rounded-xl p-4 shadow-sm border border-gray-100 card-hover mb-3";
             div.style.animationDelay = `${index * 0.1}s`;
             div.classList.add('fade-in');
-            
+
             const iconColor = s.brandType === 'fast' ? 'text-orange-500' : 'text-blue-500';
             const iconBg = s.brandType === 'fast' ? 'bg-orange-50' : 'bg-blue-50';
-            
+
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex gap-3">
@@ -503,13 +560,13 @@
         // ==========================================
         // 美食決策導航功能程式碼
         // ==========================================
-        
+
         // [設定] Google Maps API Key
         // AIza... 為範例，若無效或未啟用，系統會自動切換回 Mock Mode
-        const GOOGLE_API_KEY = "AIzaSyAHA3Q-CwqIh9UKJcDimu0x0XBPi-ATwqo"; 
+        const GOOGLE_API_KEY = "AIzaSyAHA3Q-CwqIh9UKJcDimu0x0XBPi-ATwqo";
 
         const FOOD_CONFIG = { categories: { 'chinese': { name: '中式料理', icon: 'fa-bowl-rice' }, 'japanese': { name: '日式料理', icon: 'fa-fish' }, 'western': { name: '西式/速食', icon: 'fa-burger' }, 'cafe': { name: '咖啡/甜點', icon: 'fa-mug-hot' }, 'snack': { name: '在地小吃', icon: 'fa-cookie-bite' } } };
-        
+
         // 真實餐廳名稱資料庫 (模擬模式使用)
         const MOCK_RESTAURANT_NAMES = {
             'chinese': ["鼎泰豐", "鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "瓦城泰國料理", "饗食天堂", "這一鍋", "海底撈", "老四川", "朱記餡餅粥", "段純貞牛肉麵", "春水堂", "點水樓"],
@@ -520,7 +577,7 @@
         };
 
         let foodUserLocation = null, allRestaurants = [];
-        
+
         // 動態載入 Google Maps SDK
         function loadGoogleMapsAPI() {
             return new Promise((resolve, reject) => {
@@ -545,10 +602,10 @@
                 const center = new google.maps.LatLng(lat, lng);
                 const mapDiv = document.createElement('div');
                 const service = new google.maps.places.PlacesService(mapDiv);
-                
+
                 const request = {
                     location: center,
-                    radius: '1500', 
+                    radius: '1500',
                     type: ['restaurant', 'cafe', 'bakery', 'meal_takeaway', 'food']
                 };
 
@@ -559,7 +616,7 @@
                             resolve(googleData);
                         } else {
                             console.warn("Google API 查無結果或失敗:", status);
-                            resolve(null); 
+                            resolve(null);
                         }
                     });
                 } catch (e) {
@@ -569,7 +626,7 @@
             });
 
             // 2. Timeout Promise (5秒)
-            const timeoutPromise = new Promise((resolve) => 
+            const timeoutPromise = new Promise((resolve) =>
                 setTimeout(() => {
                     console.warn("Google API Timeout - Switching to Mock");
                     resolve(null);
@@ -581,15 +638,15 @@
         }
 
         function transformGooglePlace(place) {
-            let type = 'chinese'; 
+            let type = 'chinese';
             const name = place.name;
             const types = place.types || [];
-            
+
             if (types.includes('cafe') || types.includes('bakery') || name.includes('咖啡')) type = 'cafe';
             else if (name.match(/(漢堡|比薩|義大利|牛排|Burger|Pizza|Pasta|麥當勞|肯德基)/i)) type = 'western';
             else if (name.match(/(壽司|拉麵|日式|丼|Sushi|Ramen|居酒屋)/i)) type = 'japanese';
             else if (name.match(/(雞排|小吃|豆花|臭豆腐|麵線|滷味)/i)) type = 'snack';
-            
+
             return {
                 name: place.name,
                 type: type,
@@ -605,19 +662,19 @@
         async function initApp() {
             document.getElementById('loading-overlay').classList.remove('hidden');
             const statusLabel = document.getElementById('food-gps-status');
-            
+
             try {
                 const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
                 foodUserLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 document.getElementById('location-text').innerText = `目前位置: ${foodUserLocation.lat.toFixed(4)}, ${foodUserLocation.lng.toFixed(4)}`;
-                
+
                 // [邏輯判斷] 有 Key 且長度合理，才嘗試 Google API
                 if (GOOGLE_API_KEY && GOOGLE_API_KEY.length > 20) {
                     try {
                         await loadGoogleMapsAPI();
-                        
+
                         const googleData = await fetchGooglePlaces(foodUserLocation.lat, foodUserLocation.lng);
-                        
+
                         if (googleData) {
                             allRestaurants = googleData;
                             statusLabel.innerHTML = '<i class="fas fa-cloud-download-alt text-blue-500"></i> Google數據';
@@ -639,7 +696,7 @@
                 // 統一計算距離
                 allRestaurants.forEach(d => d.distance = calculateHaversineDistance(foodUserLocation.lat, foodUserLocation.lng, d.lat, d.lng));
                 applyFilters();
-                
+
             } catch (e) {
                 // 定位失敗 Fallback
                 foodUserLocation = { lat: 25.0478, lng: 121.5170 };
@@ -649,12 +706,12 @@
                 applyFilters();
                 statusLabel.innerHTML = '<i class="fas fa-robot text-gray-500"></i> 模擬數據';
             }
-            
+
             // 確保 Loading 遮罩一定會消失
-            setTimeout(() => { 
-                document.getElementById('loading-overlay').classList.add('hidden'); 
-                document.getElementById('category-tabs').classList.remove('hidden'); 
-                document.getElementById('status-msg').classList.remove('hidden'); 
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('category-tabs').classList.remove('hidden');
+                document.getElementById('status-msg').classList.remove('hidden');
             }, 500);
         }
 
@@ -662,20 +719,20 @@
             let data = [];
             Object.keys(FOOD_CONFIG.categories).forEach(type => {
                 const names = MOCK_RESTAURANT_NAMES[type] || [];
-                for(let i=0; i<10; i++) {
+                for (let i = 0; i < 10; i++) {
                     const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
-                    const address = `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`;
+                    const address = `新北市蘆洲區${street}${Math.floor(Math.random() * 300) + 1}號`;
                     const randomName = names[Math.floor(Math.random() * names.length)];
-                    
+
                     data.push({
-                        name: randomName, 
-                        type, 
-                        lat: lat+(Math.random()-0.5)*0.03, 
-                        lng: lng+(Math.random()-0.5)*0.03,
-                        rating: (3.5+Math.random()*1.5).toFixed(1), 
-                        reviews: Math.floor(Math.random()*500), 
-                        address: address, 
-                        isOpen: Math.random()>0.2
+                        name: randomName,
+                        type,
+                        lat: lat + (Math.random() - 0.5) * 0.03,
+                        lng: lng + (Math.random() - 0.5) * 0.03,
+                        rating: (3.5 + Math.random() * 1.5).toFixed(1),
+                        reviews: Math.floor(Math.random() * 500),
+                        address: address,
+                        isOpen: Math.random() > 0.2
                     });
                 }
             });
@@ -686,7 +743,7 @@
             const maxDist = parseFloat(document.getElementById('distance-select').value);
             const categorized = {};
             allRestaurants.filter(i => i.distance <= maxDist && i.rating >= minRating).forEach(i => {
-                if(!categorized[i.type]) categorized[i.type] = [];
+                if (!categorized[i.type]) categorized[i.type] = [];
                 categorized[i.type].push(i);
             });
             renderUI(categorized);
@@ -694,10 +751,10 @@
         function renderUI(data) {
             const container = document.getElementById('content-area'); container.innerHTML = '';
             const tabs = document.getElementById('category-tabs'); tabs.innerHTML = '';
-            if(Object.keys(data).length === 0) { container.innerHTML = document.getElementById('no-results-template').innerHTML; return; }
+            if (Object.keys(data).length === 0) { container.innerHTML = document.getElementById('no-results-template').innerHTML; return; }
             Object.keys(data).forEach((key, idx) => {
                 const items = data[key];
-                tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx===0?'bg-orange-600 text-white':'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
+                tabs.innerHTML += `<a href="#cat-${key}" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx === 0 ? 'bg-orange-600 text-white' : 'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
                 let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold text-gray-800">${FOOD_CONFIG.categories[key].name}</h2></div>`;
                 items.slice(0, 5).forEach(item => {
                     html += `
@@ -769,22 +826,22 @@
         const attractionApp = {
             userPos: { lat: 25.0478, lng: 121.5170 },
             currentRadius: 30, minRating: 3.8, currentDistrict: 'all',
-            
+
             init() {
-                this.cacheDOM(); 
-                this.bindEvents(); 
+                this.cacheDOM();
+                this.bindEvents();
                 this.refreshLocation();
             },
             cacheDOM() {
                 this.dom = {
                     districtInput: document.getElementById('district-input'),
-                    radiusInput: document.getElementById('radius-input'), 
+                    radiusInput: document.getElementById('radius-input'),
                     radiusVal: document.getElementById('radius-val'),
-                    ratingInput: document.getElementById('rating-input'), 
+                    ratingInput: document.getElementById('rating-input'),
                     listPaid: document.getElementById('list-paid'),
-                    listFree: document.getElementById('list-free'), 
+                    listFree: document.getElementById('list-free'),
                     countPaid: document.getElementById('count-paid'),
-                    countFree: document.getElementById('count-free'), 
+                    countFree: document.getElementById('count-free'),
                     gpsStatus: document.getElementById('gps-status')
                 };
             },
@@ -793,14 +850,14 @@
                     this.currentDistrict = e.target.value;
                     this.render();
                 });
-                this.dom.radiusInput.addEventListener('input', (e) => { 
-                    this.currentRadius = parseInt(e.target.value); 
-                    this.dom.radiusVal.textContent = `${this.currentRadius} km`; 
-                    this.render(); 
+                this.dom.radiusInput.addEventListener('input', (e) => {
+                    this.currentRadius = parseInt(e.target.value);
+                    this.dom.radiusVal.textContent = `${this.currentRadius} km`;
+                    this.render();
                 });
-                this.dom.ratingInput.addEventListener('change', (e) => { 
-                    this.minRating = parseFloat(e.target.value); 
-                    this.render(); 
+                this.dom.ratingInput.addEventListener('change', (e) => {
+                    this.minRating = parseFloat(e.target.value);
+                    this.render();
                 });
             },
             refreshLocation() {
@@ -813,7 +870,7 @@
                 }
             },
             calculateDistance(lat1, lon1, lat2, lon2) {
-                return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2)); 
+                return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2));
             },
             render() {
                 // 1. 基本資料處理：計算距離
@@ -827,10 +884,10 @@
                     const matchDist = place.distance <= this.currentRadius;
                     const matchRating = place.rating >= this.minRating;
                     const matchDistrict = this.currentDistrict === 'all' || place.address.includes(this.currentDistrict);
-                    
+
                     return matchDist && matchRating && matchDistrict;
                 })
-                .sort((a, b) => b.rating - a.rating);
+                    .sort((a, b) => b.rating - a.rating);
 
                 // 3. 分類顯示 (付費/免費)，上限調整為 30 筆
                 const paidPlaces = filteredData.filter(p => p.isPaid).slice(0, 30);
@@ -846,7 +903,7 @@
                 const borderColor = isPaid ? 'border-amber-200 hover:border-amber-300' : 'border-emerald-200 hover:border-emerald-300';
                 const btnColor = 'bg-blue-600 hover:bg-blue-700 text-white';
                 const icon = isPaid ? 'fa-ticket-alt' : 'fa-tree';
-                
+
                 return `
                     <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 ${borderColor} bg-white shadow-sm transition-all duration-200">
                         <div class="flex justify-between items-start mb-2">
@@ -872,4 +929,5 @@
         };
     </script>
 </body>
+
 </html>
