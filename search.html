@@ -504,6 +504,16 @@
         // 美食決策導航功能程式碼
         // ==========================================
         const FOOD_CONFIG = { categories: { 'chinese': { name: '中式料理', icon: 'fa-bowl-rice' }, 'japanese': { name: '日式料理', icon: 'fa-fish' }, 'western': { name: '西式/速食', icon: 'fa-burger' }, 'cafe': { name: '咖啡/甜點', icon: 'fa-mug-hot' }, 'snack': { name: '在地小吃', icon: 'fa-cookie-bite' } } };
+        
+        // 新增真實餐廳名稱資料庫
+        const MOCK_RESTAURANT_NAMES = {
+            'chinese': ["鼎泰豐", "鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "瓦城泰國料理", "饗食天堂", "這一鍋", "海底撈", "老四川", "朱記餡餅粥", "段純貞牛肉麵", "春水堂", "點水樓"],
+            'japanese': ["壽司郎", "藏壽司", "一蘭拉麵", "丸龜製麵", "吉野家", "Sukiya食其家", "爭鮮迴轉壽司", "定食8", "大戶屋", "勝博殿", "銀座杏子日式豬排", "花月嵐拉麵", "屯京拉麵", "麵屋一燈", "牛角燒肉"],
+            'western': ["麥當勞", "肯德基 KFC", "漢堡王", "必勝客 Pizza Hut", "達美樂 Domino's", "摩斯漢堡 MOS Burger", "Subway", "TGI Fridays", "金色三麥", "貳樓餐廳 Second Floor", "GB鮮釀餐廳", "Chili's", "Texas Roadhouse", "N.Y. Bagels", "樂子 the Diner"],
+            'cafe': ["星巴克 Starbucks", "路易莎咖啡 Louisa", "85度C", "Cama Café", "多那之咖啡", "50嵐", "可不可熟成紅茶", "麻古茶坊", "迷客夏", "珍煮丹", "茶湯會", "清心福全", "萬波島嶼紅茶", "龜記茗品", "五桐號"],
+            'snack': ["豪大雞排", "繼光香香雞", "阿宗麵線", "派克雞排", "胖老爹美式炸雞", "師園鹽酥雞", "天使雞排", "晴光紅豆餅", "艋舺雞排", "洪瑞珍三明治", "燈籠滷味", "老天祿滷味", "阿給老店", "深坑臭豆腐", "柯氏蔥油餅"]
+        };
+
         let foodUserLocation = null, allRestaurants = [];
         
         async function initApp() {
@@ -527,12 +537,22 @@
         function generateMockFoodData(lat, lng) {
             let data = [];
             Object.keys(FOOD_CONFIG.categories).forEach(type => {
+                const names = MOCK_RESTAURANT_NAMES[type] || [];
+                // 每個分類生成 10 個店家，名稱隨機選取
                 for(let i=0; i<10; i++) {
                     const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
                     const address = `新北市蘆洲區${street}${Math.floor(Math.random()*300)+1}號`;
+                    const randomName = names[Math.floor(Math.random() * names.length)];
+                    
                     data.push({
-                        name: `${FOOD_CONFIG.categories[type].name} ${i+1}號店`, type, lat: lat+(Math.random()-0.5)*0.03, lng: lng+(Math.random()-0.5)*0.03,
-                        rating: (3.5+Math.random()*1.5).toFixed(1), reviews: Math.floor(Math.random()*500), address: address, isOpen: Math.random()>0.2
+                        name: randomName, 
+                        type, 
+                        lat: lat+(Math.random()-0.5)*0.03, 
+                        lng: lng+(Math.random()-0.5)*0.03,
+                        rating: (3.5+Math.random()*1.5).toFixed(1), 
+                        reviews: Math.floor(Math.random()*500), 
+                        address: address, 
+                        isOpen: Math.random()>0.2
                     });
                 }
             });
