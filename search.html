@@ -498,18 +498,96 @@
             document.getElementById('error-container').classList.remove('hidden');
         }
 
-        function generateAndRenderStations(userLat, userLng) {
+        async function generateAndRenderStations(userLat, userLng) {
             document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('result-container').classList.remove('hidden');
             const list = document.getElementById('station-list');
-            list.innerHTML = '';
+            list.innerHTML = '<div class="flex justify-center py-4"><div class="loader"></div></div>'; // Loading
+            document.getElementById('result-container').classList.remove('hidden');
 
+            try {
+                // Reuse the Google API fetcher but for charging stations
+                await loadGoogleMapsAPI();
+
+                const apiPromise = new Promise((resolve) => {
+                    const center = new google.maps.LatLng(userLat, userLng);
+                    const mapDiv = document.createElement('div');
+                    const service = new google.maps.places.PlacesService(mapDiv);
+
+                    const request = {
+                        location: center,
+                        radius: 5000, // 5km search for EV
+                        type: 'charging_station'
+                    };
+
+                    service.nearbySearch(request, (results, status) => {
+                        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                            resolve(results);
+                        } else {
+                            resolve(null);
+                        }
+                    });
+                });
+
+                // Timeout
+                const timeoutPromise = new Promise(r => setTimeout(() => r(null), 5000));
+                const results = await Promise.race([apiPromise, timeoutPromise]);
+
+                list.innerHTML = ''; // Clear loading
+
+                if (results && results.length > 0) {
+                    const stations = results.map(place => {
+                        // Mock Price logic based on brand name guessing
+                        let type = "AC 7kW";
+                        let price = 7.5;
+                        let brandType = "slow";
+                        const n = place.name.toLowerCase();
+
+                        if (n.includes("supercharger") || n.includes("特爾") || n.includes("evoasis") || n.includes("u-power") || n.includes("dc")) {
+                            type = "DC 180kW+";
+                            price = (9.0 + Math.random() * 3).toFixed(1);
+                            brandType = "fast";
+                        } else if (n.includes("evalue") || n.includes("華城")) {
+                            type = "DC 120kW";
+                            price = (8.5 + Math.random() * 2).toFixed(1);
+                            brandType = "fast";
+                        }
+
+                        return {
+                            name: place.name,
+                            lat: place.geometry.location.lat(),
+                            lng: place.geometry.location.lng(),
+                            address: place.vicinity,
+                            type,
+                            price,
+                            brandType
+                        };
+                    });
+
+                    // Sort by distance
+                    stations.forEach(s => s.distance = calculateHaversineDistance(userLat, userLng, s.lat, s.lng));
+                    stations.sort((a, b) => a.distance - b.distance);
+
+                    stations.forEach((s, idx) => list.appendChild(createStationCard(s, idx)));
+
+                } else {
+                    // Fallback to mock if API fails
+                    useMockEVData(userLat, userLng, list);
+                }
+
+            } catch (e) {
+                console.error("EV API Error", e);
+                useMockEVData(userLat, userLng, list);
+            }
+        }
+
+        function useMockEVData(userLat, userLng, list) {
+            list.innerHTML = '';
             let stations = [];
             for (let i = 0; i < 10; i++) {
                 const brand = MOCK_BRANDS[i % MOCK_BRANDS.length];
                 const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
                 stations.push({
-                    name: `${brand.name} (站點 ${String.fromCharCode(65 + i)})`,
+                    name: `${brand.name} (模擬)`,
                     lat: userLat + (Math.random() - 0.5) * 0.04,
                     lng: userLng + (Math.random() - 0.5) * 0.04,
                     price: brand.basePrice,
@@ -626,8 +704,11 @@
                 const request = {
                     location: center,
                     radius: radiusInMeters,
-                    type: 'restaurant'
+                    type: radiusInMeters === 'ev' ? ['charging_station'] : 'restaurant' // Hack to reuse function or modify
                 };
+
+                // Better approach: modify function signature or check a flag. 
+                // Let's modify the function signature in the next step properly.
 
                 try {
                     service.nearbySearch(request, (results, status) => {
