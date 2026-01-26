@@ -206,6 +206,9 @@
                             <option value="1.0" selected>1.0 km</option>
                             <option value="2.0">2.0 km</option>
                             <option value="5.0">5.0 km</option>
+                            <option value="10.0">10.0 km</option>
+                            <option value="20.0">20.0 km</option>
+                            <option value="30.0">30.0 km</option>
                         </select>
                     </div>
                     <!-- 統一的大按鈕 -->
@@ -321,13 +324,20 @@
                     </div>
 
                     <!-- 半徑 -->
-                    <div class="flex flex-col justify-center">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs font-medium text-gray-500">搜尋半徑</span>
-                            <span id="radius-val" class="text-xs font-bold text-blue-600">30 km</span>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-ruler-horizontal text-blue-600 text-xs"></i>
                         </div>
-                        <input type="range" id="radius-input" min="1" max="50" value="30" step="1"
-                            class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        <select id="radius-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="0.5">0.5 km</option>
+                            <option value="1.0">1.0 km</option>
+                            <option value="2.0">2.0 km</option>
+                            <option value="5.0">5.0 km</option>
+                            <option value="10.0">10.0 km</option>
+                            <option value="20.0">20.0 km</option>
+                            <option value="30.0" selected>30.0 km</option>
+                        </select>
                     </div>
 
                     <!-- 按鈕 -->
@@ -606,7 +616,7 @@
         }
 
         // 呼叫 Google Places Service (含超時機制)
-        function fetchGooglePlaces(lat, lng) {
+        function fetchGooglePlaces(lat, lng, radiusInMeters = 1500) {
             // 1. API 請求 Promise
             const apiPromise = new Promise((resolve) => {
                 const center = new google.maps.LatLng(lat, lng);
@@ -615,7 +625,7 @@
 
                 const request = {
                     location: center,
-                    radius: 1500,
+                    radius: radiusInMeters,
                     type: 'restaurant'
                 };
 
@@ -691,7 +701,11 @@
                     try {
                         await loadGoogleMapsAPI();
 
-                        const googleData = await fetchGooglePlaces(foodUserLocation.lat, foodUserLocation.lng);
+                        // 取得目前選單的半徑設定 (轉為公尺)
+                        const radiusKm = parseFloat(document.getElementById('distance-select').value);
+                        const radiusMeters = Math.min(radiusKm * 1000, 50000); // Google API 上限 50km
+
+                        const googleData = await fetchGooglePlaces(foodUserLocation.lat, foodUserLocation.lng, radiusMeters);
 
                         if (googleData) {
                             allRestaurants = googleData;
@@ -865,7 +879,6 @@
                 this.dom = {
                     districtInput: document.getElementById('district-input'),
                     radiusInput: document.getElementById('radius-input'),
-                    radiusVal: document.getElementById('radius-val'),
                     ratingInput: document.getElementById('rating-input'),
                     listPaid: document.getElementById('list-paid'),
                     listFree: document.getElementById('list-free'),
@@ -879,9 +892,8 @@
                     this.currentDistrict = e.target.value;
                     this.render();
                 });
-                this.dom.radiusInput.addEventListener('input', (e) => {
-                    this.currentRadius = parseInt(e.target.value);
-                    this.dom.radiusVal.textContent = `${this.currentRadius} km`;
+                this.dom.radiusInput.addEventListener('change', (e) => {
+                    this.currentRadius = parseFloat(e.target.value);
                     this.render();
                 });
                 this.dom.ratingInput.addEventListener('change', (e) => {
