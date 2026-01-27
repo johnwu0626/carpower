@@ -1,206 +1,1009 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>景點探索導航 | Travel Tech Demo</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EV 生活圈 - 充電、美食與景點</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 引入 FontAwesome (統一全站圖示) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入 Noto Sans Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        /* 共用設定 */
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f3f4f6;
         }
-        .card-hover:hover {
-            transform: translateY(-2px);
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 底部安全區 */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* 下拉選單自定義箭頭 */
+        .custom-select {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.0rem;
+        }
+
+        /* 隱藏滾動條但保留功能 */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 統一卡片互動效果 */
+        .card-hover {
             transition: all 0.2s ease-in-out;
         }
-        /* Custom scrollbar for better aesthetics */
-        ::-webkit-scrollbar {
-            width: 8px;
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+
+        /* 載入動畫 */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #10B981;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
 
-    <!-- Header -->
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <i data-lucide="map" class="text-blue-600 w-6 h-6"></i>
-                <h1 class="text-xl font-bold text-gray-800">景點探索導航</h1>
-            </div>
-            <div id="gps-status" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
-                <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...
-            </div>
-        </div>
-    </header>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen overflow-hidden flex flex-col">
 
-    <!-- Controls & Filters -->
-    <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <!-- Radius Filter -->
-                <div class="flex flex-col space-y-2">
-                    <label class="text-sm font-semibold text-gray-700 flex justify-between">
-                        <span>搜尋半徑 (公里)</span>
-                        <span id="radius-val" class="text-blue-600">5 km</span>
-                    </label>
-                    <input type="range" id="radius-input" min="1" max="30" value="5" step="1" 
-                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                    <div class="flex justify-between text-xs text-gray-400">
-                        <span>1km</span>
-                        <span>30km</span>
+    <!-- ========================================== -->
+    <!-- 視圖 1: EV 充電站導航 -->
+    <!-- ========================================== -->
+    <div id="view-ev" class="flex-1 overflow-y-auto pb-20 relative flex flex-col">
+        <!-- 統一 Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-40 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-charging-station"></i>
                     </div>
+                    EV 充電神探
+                </h1>
+                <div
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-wifi text-green-500"></i> 線上
                 </div>
+            </div>
+        </header>
 
-                <!-- Rating Filter -->
-                <div class="flex flex-col space-y-2">
-                    <label class="text-sm font-semibold text-gray-700">最低 Google 評分</label>
-                    <select id="rating-input" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                        <option value="3.8">⭐ 3.8 以上</option>
-                        <option value="4.0">⭐ 4.0 以上</option>
-                        <option value="4.2">⭐ 4.2 以上</option>
-                        <option value="4.5">⭐ 4.5 以上</option>
-                    </select>
+        <!-- 統一控制列 -->
+        <section class="bg-white border-b border-gray-200 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center text-sm text-gray-500 whitespace-nowrap">
+                        <i class="fas fa-info-circle mr-2 text-green-500"></i>
+                        <span id="status-text">準備就緒</span>
+                    </div>
+
+                    <button id="locate-btn" onclick="startLocationProcess()"
+                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 whitespace-nowrap">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
+                    </button>
                 </div>
-
-                <!-- Action -->
-                <div class="flex items-end">
-                    <button onclick="app.refreshLocation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95 transform">
-                        <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> 更新位置與搜尋
+                <!-- 錯誤訊息區塊 -->
+                <div id="error-container"
+                    class="hidden mt-2 p-2 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                    <p id="error-msg" class="text-xs text-red-600 font-medium"></p>
+                    <button onclick="useDefaultLocation()"
+                        class="text-xs bg-white border border-red-200 text-red-600 px-2 py-1 rounded shadow-sm">
+                        使用預設位置
                     </button>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            <!-- Column 1: Paid Attractions -->
-            <div class="flex flex-col space-y-4">
-                <div class="flex items-center space-x-2 pb-2 border-b-2 border-amber-400">
-                    <div class="p-2 bg-amber-100 rounded-lg text-amber-600">
-                        <i data-lucide="ticket" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800">付費探索</h2>
-                        <p class="text-xs text-gray-500">博物館、展覽、遊樂園</p>
-                    </div>
-                    <span id="count-paid" class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+        <main class="max-w-2xl mx-auto px-4 py-4 w-full">
+            <div id="result-container" class="space-y-4 hidden">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="font-bold text-gray-700">推薦站點</h3>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">依距離排序</span>
                 </div>
-                <div id="list-paid" class="space-y-4 min-h-[200px]">
-                    <!-- JS will inject cards here -->
-                </div>
+                <div id="station-list" class="space-y-3"></div>
             </div>
 
-            <!-- Column 2: Free Spots -->
-            <div class="flex flex-col space-y-4">
-                <div class="flex items-center space-x-2 pb-2 border-b-2 border-emerald-400">
-                    <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600">
-                        <i data-lucide="trees" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800">免費漫遊</h2>
-                        <p class="text-xs text-gray-500">公園、地標、自然景觀</p>
-                    </div>
-                    <span id="count-free" class="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 rounded-full">0</span>
+            <div id="empty-state" class="text-center py-12 text-gray-400">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-map-marked-alt text-2xl text-gray-300"></i>
                 </div>
-                <div id="list-free" class="space-y-4 min-h-[200px]">
-                    <!-- JS will inject cards here -->
+                <p>點擊上方按鈕<br>開始搜尋最佳充電站</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 視圖 2: 美食決策導航 -->
+    <!-- ========================================== -->
+    <div id="view-food" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
+        <!-- 統一 Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    美食決策導航
+                </h1>
+                <div id="food-gps-status"
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-map-marker-alt"></i> 待命
                 </div>
             </div>
+        </header>
 
+        <!-- 統一控制列 (Grid) -->
+        <section class="bg-white border-b border-gray-200 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- 評分篩選 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        </div>
+                        <select id="rating-select" onchange="applyFilters()"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="3.0">3.0+ ⭐</option>
+                            <option value="3.5">3.5+ ⭐</option>
+                            <option value="3.8" selected>3.8+ ⭐</option>
+                            <option value="4.0">4.0+ ⭐</option>
+                        </select>
+                    </div>
+                    <!-- 距離篩選 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-ruler-horizontal text-blue-400 text-xs"></i>
+                        </div>
+                        <select id="distance-select" onchange="applyFilters()"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="0.5">0.5 km</option>
+                            <option value="1.0" selected>1.0 km</option>
+                            <option value="2.0">2.0 km</option>
+                            <option value="5.0">5.0 km</option>
+                            <option value="10.0">10.0 km</option>
+                            <option value="20.0">20.0 km</option>
+                            <option value="30.0">30.0 km</option>
+                        </select>
+                    </div>
+                    <!-- 統一的大按鈕 -->
+                    <button onclick="initApp()"
+                        class="col-span-2 w-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <main class="flex-grow overflow-y-auto p-4 pb-24" id="main-container">
+            <div class="max-w-2xl mx-auto w-full">
+                <div id="status-msg"
+                    class="mb-4 text-center text-sm text-gray-500 hidden flex items-center justify-center gap-2">
+                    <i class="fas fa-location-arrow text-orange-500"></i> <span id="location-text">定位中...</span>
+                </div>
+                <div class="sticky top-0 bg-gray-50 pt-2 pb-4 z-10 gap-2 mb-2 hidden flex overflow-x-auto whitespace-nowrap scrollbar-hide"
+                    id="category-tabs"></div>
+                <div id="content-area" class="space-y-6"></div>
+            </div>
+        </main>
+
+        <div id="loading-overlay"
+            class="absolute inset-0 bg-white z-20 flex flex-col items-center justify-center hidden">
+            <div class="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-600 font-medium animate-pulse">正在搜尋周邊美食...</p>
+            <p id="loading-subtext" class="text-xs text-gray-400 mt-2">連線資料庫中...</p>
         </div>
 
-        <!-- Empty State Template (Hidden) -->
-        <div id="empty-state" class="hidden text-center py-10 text-gray-400">
-            <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
-            <p>此範圍內沒有符合條件的景點</p>
-        </div>
+        <template id="no-results-template">
+            <div class="text-center py-12 text-gray-400 fade-in">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-search text-2xl text-gray-300"></i>
+                </div>
+                <p>哎呀！這個範圍內<br>找不到符合條件的餐廳</p>
+                <button onclick="initApp()"
+                    class="mt-4 text-orange-600 text-sm font-medium hover:underline">擴大範圍重試</button>
+            </div>
+        </template>
+    </div>
 
-    </main>
+    <!-- ========================================== -->
+    <!-- 視圖 3: 景點探索導航 -->
+    <!-- ========================================== -->
+    <div id="view-attractions" class="hidden flex-1 flex flex-col bg-gray-50 relative overflow-hidden">
+        <!-- 統一 Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-50 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between h-16">
+                <h1 class="text-lg font-bold text-gray-800 flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    景點探索導航
+                </h1>
+                <div id="gps-status"
+                    class="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <i class="fas fa-circle-notch fa-spin"></i> 待命
+                </div>
+            </div>
+        </header>
 
-    <footer class="bg-white border-t border-gray-200 mt-auto py-6">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-            <p>&copy; 2026 SmartTravel Tech Demo. 此為演示應用，數據為模擬生成。</p>
+        <!-- 統一控制列 (Grid Layout) -->
+        <section class="bg-white border-b border-gray-200 flex-none">
+            <div class="max-w-2xl mx-auto px-4 py-3">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
+                    <!-- 縣市篩選 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-map text-gray-400 text-xs"></i>
+                        </div>
+                        <select id="district-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="all">全台縣市 (不限)</option>
+                            <option value="台北市">台北市</option>
+                            <option value="新北市">新北市</option>
+                            <option value="基隆市">基隆市</option>
+                            <option value="桃園市">桃園市</option>
+                            <option value="新竹市">新竹市</option>
+                            <option value="新竹縣">新竹縣</option>
+                            <option value="苗栗縣">苗栗縣</option>
+                            <option value="台中市">台中市</option>
+                            <option value="彰化縣">彰化縣</option>
+                            <option value="南投縣">南投縣</option>
+                            <option value="雲林縣">雲林縣</option>
+                            <option value="嘉義市">嘉義市</option>
+                            <option value="嘉義縣">嘉義縣</option>
+                            <option value="台南市">台南市</option>
+                            <option value="高雄市">高雄市</option>
+                            <option value="屏東縣">屏東縣</option>
+                            <option value="宜蘭縣">宜蘭縣</option>
+                            <option value="花蓮縣">花蓮縣</option>
+                            <option value="台東縣">台東縣</option>
+                            <option value="澎湖縣">澎湖縣</option>
+                            <option value="金門縣">金門縣</option>
+                            <option value="連江縣">連江縣</option>
+                        </select>
+                    </div>
+
+                    <!-- 評分 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        </div>
+                        <select id="rating-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="3.8">3.8+ ⭐</option>
+                            <option value="4.0">4.0+ ⭐</option>
+                            <option value="4.2">4.2+ ⭐</option>
+                            <option value="4.5">4.5+ ⭐</option>
+                        </select>
+                    </div>
+
+                    <!-- 半徑 -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                            <i class="fas fa-ruler-horizontal text-blue-600 text-xs"></i>
+                        </div>
+                        <select id="radius-input"
+                            class="custom-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-7 p-2 transition-colors hover:bg-white">
+                            <option value="0.5">0.5 km</option>
+                            <option value="1.0">1.0 km</option>
+                            <option value="2.0">2.0 km</option>
+                            <option value="5.0">5.0 km</option>
+                            <option value="10.0">10.0 km</option>
+                            <option value="20.0">20.0 km</option>
+                            <option value="30.0" selected>30.0 km</option>
+                        </select>
+                    </div>
+
+                    <!-- 按鈕 -->
+                    <button onclick="attractionApp.refreshLocation()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors shadow-sm active:scale-95">
+                        <i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <main class="flex-grow overflow-y-auto px-4 py-4 w-full pb-24">
+            <div class="max-w-2xl mx-auto grid grid-cols-1 gap-6">
+                <!-- 統一為單欄流式佈局 -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
+                        <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600"><i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800">付費探索</h2>
+                        </div>
+                        <span id="count-paid"
+                            class="ml-auto bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-full border border-amber-100">0</span>
+                    </div>
+                    <div id="list-paid" class="space-y-3"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 pb-2 border-b border-gray-200">
+                        <div class="p-1.5 bg-emerald-100 rounded-lg text-emerald-600"><i class="fas fa-tree"></i></div>
+                        <div>
+                            <h2 class="text-base font-bold text-gray-800">免費漫遊</h2>
+                        </div>
+                        <span id="count-free"
+                            class="ml-auto bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full border border-emerald-100">0</span>
+                    </div>
+                    <div id="list-free" class="space-y-3"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 底部功能選單 -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 pb-safe">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="switchApp('ev')" id="nav-ev"
+                class="flex-1 flex flex-col items-center justify-center h-full text-green-600 transition-colors duration-200 group">
+                <i class="fas fa-charging-station text-xl mb-1 group-active:scale-95 transition-transform"></i>
+                <span class="text-xs font-medium">充電導航</span>
+            </button>
+            <button onclick="switchApp('food')" id="nav-food"
+                class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group">
+                <i class="fas fa-utensils text-xl mb-1 group-active:scale-95 transition-transform"></i>
+                <span class="text-xs font-medium">美食決策</span>
+            </button>
+            <button onclick="switchApp('attractions')" id="nav-attractions"
+                class="flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group">
+                <i class="fas fa-map-marked-alt text-xl mb-1 group-active:scale-95 transition-transform"></i>
+                <span class="text-xs font-medium">景點探索</span>
+            </button>
         </div>
-    </footer>
+    </nav>
 
     <script>
-        // --- 1. Mock Data Generation (模擬資料庫) ---
-        // 為了演示效果，我們產生圍繞在 "台北車站" (25.0478, 121.5170) 周圍的數據
-        // 但這些數據會根據與使用者的相對距離進行計算
-        
-        const MOCK_BASE_LAT = 25.0478;
-        const MOCK_BASE_LNG = 121.5170;
+        // --- 全域變數與切換邏輯 ---
+        let currentApp = 'ev';
+        let isFoodAppInitialized = false;
+        let isAttractionAppInitialized = false;
 
+        function switchApp(appName) {
+            const evView = document.getElementById('view-ev');
+            const foodView = document.getElementById('view-food');
+            const attrView = document.getElementById('view-attractions');
+
+            const navEv = document.getElementById('nav-ev');
+            const navFood = document.getElementById('nav-food');
+            const navAttr = document.getElementById('nav-attractions');
+
+            evView.classList.add('hidden');
+            foodView.classList.add('hidden');
+            attrView.classList.add('hidden');
+
+            navEv.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-green-600 transition-colors duration-200 group";
+            navFood.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-orange-500 transition-colors duration-200 group";
+            navAttr.className = "flex-1 flex flex-col items-center justify-center h-full text-gray-400 hover:text-blue-600 transition-colors duration-200 group";
+
+            if (appName === 'ev') {
+                evView.classList.remove('hidden');
+                navEv.classList.remove('text-gray-400');
+                navEv.classList.add('text-green-600');
+            } else if (appName === 'food') {
+                foodView.classList.remove('hidden');
+                navFood.classList.remove('text-gray-400');
+                navFood.classList.add('text-orange-600');
+                if (!isFoodAppInitialized) { initApp(); isFoodAppInitialized = true; }
+            } else if (appName === 'attractions') {
+                attrView.classList.remove('hidden');
+                navAttr.classList.remove('text-gray-400');
+                navAttr.classList.add('text-blue-600');
+                if (!isAttractionAppInitialized) { attractionApp.init(); isAttractionAppInitialized = true; }
+            }
+        }
+
+        // ==========================================
+        // EV 充電站功能程式碼 (Google Sheets 整合版)
+        // ==========================================
+
+        // 改用 Google Visualization API 輸出 CSV，此端點通常能避開部分 CORS 限制
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1dWl3ZHx8WYOFAm3mSgiFAykRSUnPzYbMmKd8wCMKbPk/gviz/tq?tqx=out:csv";
+
+        function startLocationProcess() {
+            const btn = document.getElementById('locate-btn');
+            const statusText = document.getElementById('status-text');
+            const errorContainer = document.getElementById('error-container');
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-2"></div> 定位中...';
+            statusText.innerText = "正在取得 GPS...";
+            errorContainer.classList.add('hidden');
+
+            if (!navigator.geolocation) { handleError("此瀏覽器不支援定位"); return; }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    statusText.innerText = "已鎖定位置";
+                    generateAndRenderStations(position.coords.latitude, position.coords.longitude);
+                    // Update button text to match standard
+                    btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋';
+                    btn.disabled = false;
+                },
+                (error) => { handleError("定位失敗，請確認權限"); },
+                { enableHighAccuracy: false, timeout: 15000 }
+            );
+        }
+
+        function useDefaultLocation() {
+            document.getElementById('error-container').classList.add('hidden');
+            document.getElementById('status-text').innerText = "使用預設位置 (蘆洲)";
+            generateAndRenderStations(25.08, 121.47);
+            const btn = document.getElementById('locate-btn');
+            btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> 更新位置與搜尋';
+            btn.disabled = false;
+        }
+
+        function handleError(msg) {
+            const btn = document.getElementById('locate-btn');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo mr-2"></i> 再試一次';
+            document.getElementById('status-text').innerText = "定位失敗";
+            document.getElementById('error-msg').innerText = msg;
+            document.getElementById('error-container').classList.remove('hidden');
+        }
+
+        // CSV 解析器 (處理包在引號內的逗號)
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentCell = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentCell += '"';
+                        i++; // Skip next quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentCell.trim());
+                    currentCell = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') i++;
+                    if (currentCell || currentRow.length > 0) {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                    }
+                } else {
+                    currentCell += char;
+                }
+            }
+            if (currentCell || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+            }
+            return rows;
+        }
+
+        async function fetchSheetCSV() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const text = await response.text();
+                const rows = parseCSV(text);
+
+                // 假設第一列是標題，從第二列開始
+                // 標題對應: 站點 ID(0), 營運商(1), 站點名稱(2), 縣市(3), 詳細地址(4), 充電費率描述(5), 停車費率描述(6), 充電樁數(槍數)(7), Google Map(8)
+                const stations = [];
+                // 簡單的標題映射檢查
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length < 8) continue; // Skip incomplete
+
+                    const mapUrl = row[8] || "";
+                    let lat = 0, lng = 0;
+
+                    // 解析 Google Map URL 裡的座標
+                    // 格式如: https://www.google.com/maps/search/?api=1&query=25.01547,121.51171
+                    const match = mapUrl.match(/query=([\d\.]+),([\d\.]+)/);
+                    if (match) {
+                        lat = parseFloat(match[1]);
+                        lng = parseFloat(match[2]);
+                    }
+
+                    if (lat === 0 || lng === 0) continue;
+
+                    stations.push({
+                        name: row[2], // 站點名稱
+                        operator: row[1], // 營運商
+                        address: row[4], // 詳細地址
+                        chargingFee: row[5], // 充電費率描述
+                        parkingFee: row[6], // 停車費率描述
+                        gunCount: row[7], // 充電樁數(槍數)
+                        lat: lat,
+                        lng: lng,
+                        mapUrl: mapUrl
+                    });
+                }
+                return stations;
+            } catch (error) {
+                console.error("Error fetching CSV:", error);
+                return [];
+            }
+        }
+
+        async function generateAndRenderStations(userLat, userLng) {
+            document.getElementById('empty-state').classList.add('hidden');
+            const list = document.getElementById('station-list');
+            list.innerHTML = '<div class="flex justify-center py-4"><div class="loader"></div></div>'; // Loading
+            document.getElementById('result-container').classList.remove('hidden');
+
+            try {
+                // 從 Google Sheets 獲取資料
+                const stations = await fetchSheetCSV();
+
+                list.innerHTML = ''; // Clear loading
+
+                if (stations && stations.length > 0) {
+                    // 計算距離
+                    stations.forEach(s => s.distance = calculateHaversineDistance(userLat, userLng, s.lat, s.lng));
+
+                    // 排序
+                    stations.sort((a, b) => a.distance - b.distance);
+
+                    // 取最近的 20 筆 (可調整)
+                    const nearestStations = stations.slice(0, 20);
+
+                    nearestStations.forEach((s, idx) => list.appendChild(createStationCard(s, idx)));
+
+                } else {
+                    list.innerHTML = '<div class="text-center py-4 text-gray-500">暫無資料或讀取失敗</div>';
+                }
+
+            } catch (e) {
+                console.error("EV API Error", e);
+                list.innerHTML = '<div class="text-center py-4 text-red-500">發生錯誤，請稍後再試</div>';
+            }
+        }
+
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
+        }
+
+        // 修改後的 EV 卡片設計 (適應 Sheet 資料)
+        function createStationCard(s, index) {
+            const div = document.createElement('div');
+            div.className = "bg-white rounded-xl p-4 shadow-sm border border-gray-100 card-hover mb-3";
+            div.style.animationDelay = `${index * 0.1}s`;
+            div.classList.add('fade-in');
+
+            // 判斷類型與顏色 (簡單邏輯)
+            // 假設槍數 > 0 為可用
+            const iconColor = 'text-green-500';
+            const iconBg = 'bg-green-50';
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex gap-3">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg leading-tight">${s.name}</h4>
+                            <div class="flex flex-wrap items-center mt-1 text-sm text-gray-500 gap-y-1">
+                                <span class="\${iconBg} \${iconColor} px-2 py-0.5 rounded text-xs font-medium mr-2">\${s.operator} • \${s.gunCount}槍</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-gray-100 px-2 py-1 rounded h-fit text-gray-600 font-medium whitespace-nowrap">\${s.distance} km</span>
+                </div>
+                
+                <div class="space-y-1 mt-2">
+                    <div class="text-sm text-gray-600 flex items-start px-1">
+                        <i class="fas fa-map-pin w-5 text-center mr-1 text-gray-400 mt-0.5"></i>
+                        <span class="text-xs">\${s.address}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 flex items-start px-1">
+                         <i class="fas fa-bolt w-5 text-center mr-1 text-yellow-400 mt-0.5"></i>
+                        <span class="text-xs text-gray-500">\${s.chargingFee}</span>
+                    </div>
+                     <div class="text-sm text-gray-600 flex items-start px-1">
+                         <i class="fas fa-parking w-5 text-center mr-1 text-blue-400 mt-0.5"></i>
+                        <span class="text-xs text-gray-500">\${s.parkingFee}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t border-gray-50 flex justify-end">
+                    <a href="\${s.mapUrl}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition flex items-center shadow-sm active:scale-95">
+                        導航 <i class="fas fa-location-arrow ml-2"></i>
+                    </a>
+                </div>
+            `;
+            return div;
+        }
+
+        // ==========================================
+        // 美食決策導航功能程式碼
+        // ==========================================
+
+        // [設定] Google Maps API Key
+        // AIza... 為範例，若無效或未啟用，系統會自動切換回 Mock Mode
+        const GOOGLE_API_KEY = "AIzaSyAHA3Q-CwqIh9UKJcDimu0x0XBPi-ATwqo";
+
+        const FOOD_CONFIG = {
+            categories: {
+                'hotpot': { name: '火鍋燒烤', icon: 'fa-fire' },
+                'taiwanese': { name: '台式麵飯', icon: 'fa-bowl-rice' },
+                'breakfast': { name: '早午餐', icon: 'fa-egg' },
+                'drinks': { name: '手搖咖啡', icon: 'fa-mug-hot' },
+                'snack': { name: '在地小吃', icon: 'fa-cookie-bite' },
+                'exotic': { name: '異國料理', icon: 'fa-earth-asia' }
+            }
+        };
+
+        // 真實餐廳名稱資料庫 (模擬模式使用)
+        const MOCK_RESTAURANT_NAMES = {
+            'hotpot': ["馬辣頂級麻辣鴛鴦火鍋", "這一鍋", "海底撈", "築間幸福鍋物", "石二鍋", "老四川", "屋馬燒肉", "乾杯燒肉", "原燒", "肉多多火鍋", "涮乃葉", "輕井澤鍋物", "三媽臭臭鍋", "錢都日式涮涮鍋", "牛角燒肉"],
+            'taiwanese': ["鬍鬚張魯肉飯", "八方雲集", "四海遊龍", "梁社漢排骨", "三商巧福", "朱記餡餅粥", "段純貞牛肉麵", "林東芳牛肉麵", "金峰魯肉飯", "欣葉台菜", "大戶屋", "悟饕池上飯包", "正忠排骨飯", "周氏蝦捲", "度小月"],
+            'breakfast': ["麥味登", "美而美", "拉亞漢堡", "早安美芝城", "弘爺漢堡", "Q Burger", "阜杭豆漿", "永和豆漿", "MOS Burger 摩斯漢堡", "麥當勞 Breakfast", "星巴克", "路易莎", "客美多咖啡", "貳樓餐廳 Second Floor", "樂子 the Diner"],
+            'drinks': ["星巴克 Starbucks", "路易莎 Louisa", "50嵐", "可不可熟成紅茶", "麻古茶坊", "迷客夏", "珍煮丹", "茶湯會", "清心福全", "萬波", "龜記茗品", "五桐號", "Cama Café", "春水堂", "天仁茗茶"],
+            'snack': ["豪大雞排", "繼光香香雞", "阿宗麵線", "派克雞排", "胖老爹美式炸雞", "師園鹽酥雞", "天使雞排", "晴光紅豆餅", "艋舺雞排", "洪瑞珍三明治", "燈籠滷味", "老天祿滷味", "淡水阿給", "深坑臭豆腐", "柯氏蔥油餅"],
+            'exotic': ["壽司郎", "藏壽司", "一蘭拉麵", "瓦城泰國料理", "涓豆腐", "起家雞", "必勝客 Pizza Hut", "肯德基 KFC", "TGI Fridays", "金色三麥", "Chili's", "Saizeriya 薩莉亞", "點點心", "鼎泰豐", "添好運"]
+        };
+
+        let foodUserLocation = null, allRestaurants = [];
+
+        // 動態載入 Google Maps SDK
+        function loadGoogleMapsAPI() {
+            return new Promise((resolve, reject) => {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=places&language=zh-TW`;
+                script.async = true;
+                script.defer = true;
+                script.onload = resolve;
+                script.onerror = (e) => reject(new Error("Google Maps Script Load Error"));
+                document.head.appendChild(script);
+            });
+        }
+
+        // 呼叫 Google Places Service (含超時機制)
+        function fetchGooglePlaces(lat, lng, radiusInMeters = 1500) {
+            // 1. API 請求 Promise
+            const apiPromise = new Promise((resolve) => {
+                const center = new google.maps.LatLng(lat, lng);
+                const mapDiv = document.createElement('div');
+                const service = new google.maps.places.PlacesService(mapDiv);
+
+                const request = {
+                    location: center,
+                    radius: radiusInMeters,
+                    type: radiusInMeters === 'ev' ? ['charging_station'] : 'restaurant' // Hack to reuse function or modify
+                };
+
+                // Better approach: modify function signature or check a flag. 
+                // Let's modify the function signature in the next step properly.
+
+                try {
+                    service.nearbySearch(request, (results, status) => {
+                        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                            const googleData = results.map(place => transformGooglePlace(place));
+                            resolve(googleData);
+                        } else {
+                            console.warn("Google API 查無結果或失敗:", status);
+                            resolve(null);
+                        }
+                    });
+                } catch (e) {
+                    console.error("Service Call Error:", e);
+                    resolve(null);
+                }
+            });
+
+            // 2. Timeout Promise (5秒)
+            const timeoutPromise = new Promise((resolve) =>
+                setTimeout(() => {
+                    console.warn("Google API Timeout - Switching to Mock");
+                    resolve(null);
+                }, 5000)
+            );
+
+            // Race: 誰先完成算誰的
+            return Promise.race([apiPromise, timeoutPromise]);
+        }
+
+        function transformGooglePlace(place) {
+            let type = 'taiwanese'; // 預設為台式麵飯
+            const name = place.name;
+            const types = place.types || [];
+            const n = name.toLowerCase();
+
+            // 1. 火鍋燒烤
+            if (n.match(/(鍋|涮涮|燒肉|烤肉|麻辣|羊肉爐|壽喜燒|hotpot|shabu|yakiniku)/)) type = 'hotpot';
+            // 2. 飲料咖啡甜點
+            else if (types.includes('cafe') || types.includes('bakery') || n.match(/(咖啡|茶|飲|星巴克|路易莎|50嵐|迷客夏|coco|cafe|coffee|tea)/)) type = 'drinks';
+            // 3. 早餐早午餐
+            else if (n.match(/(美而美|早餐|蛋餅|吐司|早午餐|brunch|漢堡|burger|三明治)/)) type = 'breakfast';
+            // 4. 小吃
+            else if (n.match(/(雞排|鹽酥雞|滷味|臭豆腐|豆花|紅豆餅|小吃|甜不辣|夜市|炸雞)/)) type = 'snack';
+            // 5. 異國料理 (日式/韓式/泰式/西式)
+            else if (n.match(/(壽司|拉麵|日式|丼|sushi|ramen|居酒屋|泰式|韓式|義式|美式|披薩|pizza|pasta|curry|咖哩|牛排|steak)/)) type = 'exotic';
+            // 6. 其他歸類為台式麵飯 (麵/飯/便當/水餃/熱炒/排骨)
+
+            return {
+                name: place.name,
+                type: type,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                rating: place.rating || 0,
+                reviews: place.user_ratings_total || 0,
+                address: place.vicinity || "地址載入中...",
+                isOpen: place.opening_hours ? place.opening_hours.open_now : true,
+                price_level: place.price_level || 1
+            };
+        }
+
+        async function initApp() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            const statusLabel = document.getElementById('food-gps-status');
+
+            try {
+                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+                foodUserLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                document.getElementById('location-text').innerText = `目前位置: ${foodUserLocation.lat.toFixed(4)}, ${foodUserLocation.lng.toFixed(4)}`;
+
+                // [邏輯判斷] 有 Key 且長度合理，才嘗試 Google API
+                if (GOOGLE_API_KEY && GOOGLE_API_KEY.length > 20) {
+                    try {
+                        await loadGoogleMapsAPI();
+
+                        // 取得目前選單的半徑設定 (轉為公尺)
+                        const radiusKm = parseFloat(document.getElementById('distance-select').value);
+                        const radiusMeters = Math.min(radiusKm * 1000, 50000); // Google API 上限 50km
+
+                        const googleData = await fetchGooglePlaces(foodUserLocation.lat, foodUserLocation.lng, radiusMeters);
+
+                        if (googleData) {
+                            allRestaurants = googleData;
+                            statusLabel.innerHTML = '<i class="fas fa-cloud-download-alt text-blue-500"></i> Google數據';
+                        } else {
+                            throw new Error("No Data / Timeout");
+                        }
+                    } catch (err) {
+                        console.error("Google API Fallback:", err);
+                        // Fallback
+                        statusLabel.innerHTML = '<i class="fas fa-exclamation-triangle text-orange-500"></i> 模擬數據';
+                        allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                    }
+                } else {
+                    // 無 Key 狀態
+                    statusLabel.innerHTML = '<i class="fas fa-robot text-gray-500"></i> 模擬數據';
+                    allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                }
+
+                // 統一計算距離
+                allRestaurants.forEach(d => d.distance = calculateHaversineDistance(foodUserLocation.lat, foodUserLocation.lng, d.lat, d.lng));
+                applyFilters();
+
+            } catch (e) {
+                // 定位失敗 Fallback
+                foodUserLocation = { lat: 25.0478, lng: 121.5170 };
+                document.getElementById('location-text').innerText = "使用預設位置 (台北)";
+                allRestaurants = generateMockFoodData(foodUserLocation.lat, foodUserLocation.lng);
+                allRestaurants.forEach(d => d.distance = calculateHaversineDistance(foodUserLocation.lat, foodUserLocation.lng, d.lat, d.lng));
+                applyFilters();
+                statusLabel.innerHTML = '<i class="fas fa-robot text-gray-500"></i> 模擬數據';
+            }
+
+            // 確保 Loading 遮罩一定會消失
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('category-tabs').classList.remove('hidden');
+                document.getElementById('status-msg').classList.remove('hidden');
+            }, 500);
+        }
+
+        function generateMockFoodData(lat, lng) {
+            let data = [];
+            Object.keys(FOOD_CONFIG.categories).forEach(type => {
+                const names = MOCK_RESTAURANT_NAMES[type] || [];
+                for (let i = 0; i < 10; i++) {
+                    const street = MOCK_STREETS_EV[Math.floor(Math.random() * MOCK_STREETS_EV.length)];
+                    const address = `新北市蘆洲區${street}${Math.floor(Math.random() * 300) + 1}號`;
+                    const randomName = names[Math.floor(Math.random() * names.length)];
+
+                    data.push({
+                        name: randomName,
+                        type,
+                        lat: lat + (Math.random() - 0.5) * 0.03,
+                        lng: lng + (Math.random() - 0.5) * 0.03,
+                        rating: (3.5 + Math.random() * 1.5).toFixed(1),
+                        reviews: Math.floor(Math.random() * 500),
+                        address: address,
+                        isOpen: Math.random() > 0.2,
+                        price_level: Math.floor(Math.random() * 3) + 1 // 1-3 $$
+                    });
+                }
+            });
+            return data;
+        }
+        function applyFilters() {
+            const minRating = parseFloat(document.getElementById('rating-select').value);
+            const maxDist = parseFloat(document.getElementById('distance-select').value);
+            const categorized = {};
+            allRestaurants.filter(i => i.distance <= maxDist && i.rating >= minRating).forEach(i => {
+                if (!categorized[i.type]) categorized[i.type] = [];
+                categorized[i.type].push(i);
+            });
+            renderUI(categorized);
+        }
+        function renderUI(data) {
+            const container = document.getElementById('content-area'); container.innerHTML = '';
+            const tabs = document.getElementById('category-tabs'); tabs.innerHTML = '';
+
+            // Helper for Price Symbol
+            const getPriceSymbol = (level) => {
+                const l = parseInt(level) || 1;
+                return '$'.repeat(l);
+            };
+
+            if (Object.keys(data).length === 0) { container.innerHTML = document.getElementById('no-results-template').innerHTML; return; }
+
+            Object.keys(data).forEach((key, idx) => {
+                let items = data[key];
+                // 1. 依照距離排序 (由近到遠)
+                items.sort((a, b) => a.distance - b.distance);
+
+                tabs.innerHTML += `<a href="#cat-${key}" onclick="switchCategoryTab(this)" class="flex-none px-4 py-2 rounded-full text-sm font-medium border border-gray-100 ${idx === 0 ? 'bg-orange-600 text-white active-tab' : 'bg-white text-gray-600'} transition-colors"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i>${FOOD_CONFIG.categories[key].name}</a>`;
+
+                let html = `<section id="cat-${key}" class="fade-in"><div class="flex items-center mb-3 px-1"><div class="w-1 h-6 bg-orange-500 rounded-full mr-3"></div><h2 class="font-bold text-gray-800">${FOOD_CONFIG.categories[key].name}</h2></div>`;
+
+                items.slice(0, 5).forEach(item => {
+                    // 2. 統一排版樣式 (比照景點)
+                    html += `
+                    <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 border-orange-100 hover:border-orange-200 bg-white shadow-sm transition-all duration-200 mb-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight">${item.name}</h3>
+                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1"><i class="fas ${FOOD_CONFIG.categories[key].icon} mr-1"></i> ${FOOD_CONFIG.categories[key].name}</span>
+                            </div>
+                            <div class="flex items-center bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
+                                <i class="fas fa-star text-yellow-400 text-sm mr-1"></i><span class="font-bold text-gray-700 text-sm">${item.rating}</span> <span class="text-xs text-gray-400 ml-1">(${item.reviews})</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600 space-y-2">
+                            <div class="flex items-center"><i class="fas fa-money-bill-wave w-5 text-center mr-1 opacity-70"></i><span class="font-medium text-gray-800">${getPriceSymbol(item.price_level)}</span></div>
+                            <div class="flex items-start"><i class="fas fa-map-marker-alt w-5 text-center mr-1 opacity-70 mt-0.5"></i><span class="text-xs text-gray-500 line-clamp-1">${item.address}</span></div>
+                            <div class="flex items-center"><i class="fas fa-route w-5 text-center mr-1 opacity-70"></i><span>距離: <strong>${item.distance} km</strong></span></div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                             <span class="text-xs text-gray-400">#${item.isOpen ? '營業中' : '休息中'}</span>
+                             <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">導航 <i class="fas fa-location-arrow ml-2"></i></a>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML += html + '</section>';
+            });
+        }
+
+        function switchCategoryTab(el) {
+            // 移除所有 Tab 的 Active 樣式
+            document.querySelectorAll('#category-tabs a').forEach(tab => {
+                tab.classList.remove('bg-orange-600', 'text-white', 'active-tab');
+                tab.classList.add('bg-white', 'text-gray-600');
+            });
+            // 為點擊的 Tab 加上 Active 樣式
+            el.classList.remove('bg-white', 'text-gray-600');
+            el.classList.add('bg-orange-600', 'text-white', 'active-tab');
+        }
+
+        // ==========================================
+        // 景點探索導航功能程式碼
+        // ==========================================
+        // 大幅擴充資料庫以支援 30 筆上限
         const POI_DATABASE = [
-            // Paid Attractions
-            { id: 1, name: "當代藝術館", rating: 4.3, type: "美術館", isPaid: true, price: "$100 TWD", address: "台北市大同區長安西路39號", lat: 25.0504, lng: 121.5186 },
-            { id: 2, name: "天文科學教育館", rating: 4.5, type: "博物館", isPaid: true, price: "$40 TWD", address: "台北市士林區基河路363號", lat: 25.0963, lng: 121.5168 },
-            { id: 3, name: "兒童新樂園", rating: 4.4, type: "遊樂園", isPaid: true, price: "$30 TWD 起", address: "台北市士林區承德路五段55號", lat: 25.0975, lng: 121.5147 },
-            { id: 4, name: "101 觀景台", rating: 4.6, type: "地標", isPaid: true, price: "$600 TWD", address: "台北市信義區信義路五段7號89樓", lat: 25.0339, lng: 121.5644 },
-            { id: 5, name: "袖珍博物館", rating: 4.2, type: "博物館", isPaid: true, price: "$250 TWD", address: "台北市中山區建國北路一段96號B1", lat: 25.0507, lng: 121.5363 },
-            { id: 6, name: "故宮博物院", rating: 4.7, type: "博物館", isPaid: true, price: "$350 TWD", address: "台北市士林區至善路二段221號", lat: 25.1020, lng: 121.5486 },
-            { id: 7, name: "美麗華摩天輪", rating: 4.1, type: "娛樂", isPaid: true, price: "$200 TWD", address: "台北市中山區敬業三路20號", lat: 25.0835, lng: 121.5574 },
-            { id: 8, name: "動物園", rating: 4.5, type: "動物園", isPaid: true, price: "$60 TWD", address: "台北市文山區新光路二段30號", lat: 24.9983, lng: 121.5811 },
-            { id: 9, name: "北投溫泉博物館", rating: 4.4, type: "博物館", isPaid: true, price: "自由捐獻/部分收費", address: "台北市北投區中山路2號", lat: 25.1365, lng: 121.5065 },
-            { id: 10, name: "華山1914特展", rating: 4.0, type: "展覽", isPaid: true, price: "視展覽而定", address: "台北市中正區八德路一段1號", lat: 25.0441, lng: 121.5293 },
-            
-            // Free Spots
-            { id: 11, name: "大安森林公園", rating: 4.6, type: "公園", isPaid: false, price: "免費", address: "台北市大安區新生南路二段1號", lat: 25.0300, lng: 121.5360 },
-            { id: 12, name: "中正紀念堂", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市中正區中山南路21號", lat: 25.0354, lng: 121.5197 },
-            { id: 13, name: "象山親山步道", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市信義區信義路五段150巷", lat: 25.0270, lng: 121.5707 },
-            { id: 14, name: "行天宮", rating: 4.7, type: "寺廟", isPaid: false, price: "免費", address: "台北市中山區民權東路二段109號", lat: 25.0631, lng: 121.5338 },
-            { id: 15, name: "松山文創園區", rating: 4.4, type: "文創園區", isPaid: false, price: "免費入場", address: "台北市信義區光復南路133號", lat: 25.0437, lng: 121.5606 },
-            { id: 16, name: "四四南村", rating: 4.2, type: "歷史遺跡", isPaid: false, price: "免費", address: "台北市信義區松勤街50號", lat: 25.0312, lng: 121.5619 },
-            { id: 17, name: "碧潭風景區", rating: 4.3, type: "自然景觀", isPaid: false, price: "免費", address: "新北市新店區新店路", lat: 24.9575, lng: 121.5372 },
-            { id: 18, name: "饒河街觀光夜市", rating: 4.1, type: "夜市", isPaid: false, price: "免費入場", address: "台北市松山區饒河街", lat: 25.0509, lng: 121.5775 },
-            { id: 19, name: "大湖公園", rating: 4.5, type: "公園", isPaid: false, price: "免費", address: "台北市內湖區成功路五段31號", lat: 25.0838, lng: 121.6022 },
-            { id: 20, name: "剝皮寮歷史街區", rating: 4.3, type: "歷史遺跡", isPaid: false, price: "免費", address: "台北市萬華區康定路173巷", lat: 25.0366, lng: 121.5022 },
-            // Random far away points to test filter
-            { id: 21, name: "九份老街", rating: 4.4, type: "老街", isPaid: false, price: "免費入場", address: "新北市瑞芳區基山街", lat: 25.1099, lng: 121.8452 }, // Far
-            { id: 22, name: "野柳地質公園", rating: 4.5, type: "自然景觀", isPaid: true, price: "$80 TWD", address: "新北市萬里區港東路167-1號", lat: 25.2064, lng: 121.6905 } // Far
+            { id: 1, name: "當代藝術館", rating: 4.3, type: "美術館", isPaid: true, price: "$100", address: "台北市大同區長安西路39號", lat: 25.0504, lng: 121.5186 },
+            { id: 2, name: "天文科學教育館", rating: 4.5, type: "博物館", isPaid: true, price: "$40", address: "台北市士林區基河路363號", lat: 25.0963, lng: 121.5168 },
+            { id: 3, name: "兒童新樂園", rating: 4.4, type: "遊樂園", isPaid: true, price: "$30起", address: "台北市士林區承德路五段55號", lat: 25.0975, lng: 121.5147 },
+            { id: 4, name: "101 觀景台", rating: 4.6, type: "地標", isPaid: true, price: "$600", address: "台北市信義區信義路五段7號", lat: 25.0339, lng: 121.5644 },
+            { id: 5, name: "故宮博物院", rating: 4.7, type: "博物館", isPaid: true, price: "$350", address: "台北市士林區至善路二段221號", lat: 25.1020, lng: 121.5486 },
+            { id: 6, name: "大安森林公園", rating: 4.6, type: "公園", isPaid: false, price: "免費", address: "台北市大安區新生南路二段1號", lat: 25.0300, lng: 121.5360 },
+            { id: 7, name: "中正紀念堂", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市中正區中山南路21號", lat: 25.0354, lng: 121.5197 },
+            { id: 8, name: "象山親山步道", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市信義區信義路五段150巷", lat: 25.0270, lng: 121.5707 },
+            { id: 9, name: "松山文創園區", rating: 4.4, type: "文創園區", isPaid: false, price: "免費", address: "台北市信義區光復南路133號", lat: 25.0437, lng: 121.5606 },
+            { id: 10, name: "饒河街觀光夜市", rating: 4.1, type: "夜市", isPaid: false, price: "免費", address: "台北市松山區饒河街", lat: 25.0509, lng: 121.5775 },
+            // 老街
+            { id: 11, name: "迪化街年貨大街", rating: 4.4, type: "老街", isPaid: false, price: "免費", address: "台北市大同區迪化街一段", lat: 25.0556, lng: 121.5103 },
+            { id: 12, name: "剝皮寮歷史街區", rating: 4.5, type: "老街", isPaid: false, price: "免費", address: "台北市萬華區康定路173巷", lat: 25.0366, lng: 121.5022 },
+            { id: 13, name: "淡水老街", rating: 4.5, type: "老街", isPaid: false, price: "免費", address: "新北市淡水區中正路", lat: 25.1695, lng: 121.4443 },
+            { id: 14, name: "深坑老街", rating: 4.2, type: "老街", isPaid: false, price: "免費", address: "新北市深坑區深坑街", lat: 25.0003, lng: 121.6150 },
+            { id: 15, name: "三峽老街", rating: 4.6, type: "老街", isPaid: false, price: "免費", address: "新北市三峽區民權街", lat: 24.9337, lng: 121.3703 },
+            { id: 16, name: "九份老街", rating: 4.4, type: "老街", isPaid: false, price: "免費", address: "新北市瑞芳區基山街", lat: 25.1099, lng: 121.8452 },
+            // 更多景點
+            { id: 17, name: "華山1914文創園區", rating: 4.6, type: "文創園區", isPaid: false, price: "免費", address: "台北市中正區八德路一段1號", lat: 25.0441, lng: 121.5294 },
+            { id: 18, name: "國父紀念館", rating: 4.5, type: "歷史地標", isPaid: false, price: "免費", address: "台北市信義區仁愛路四段505號", lat: 25.0400, lng: 121.5602 },
+            { id: 19, name: "龍山寺", rating: 4.7, type: "寺廟", isPaid: false, price: "免費", address: "台北市萬華區廣州街211號", lat: 25.0371, lng: 121.4999 },
+            { id: 20, name: "台北市立動物園", rating: 4.6, type: "動物園", isPaid: true, price: "$60", address: "台北市文山區新光路二段30號", lat: 24.9983, lng: 121.5811 },
+            { id: 21, name: "貓空纜車", rating: 4.4, type: "纜車", isPaid: true, price: "$120", address: "台北市文山區新光路二段8號", lat: 24.9961, lng: 121.5763 },
+            { id: 22, name: "美麗華摩天輪", rating: 4.3, type: "遊樂園", isPaid: true, price: "$200", address: "台北市中山區敬業三路20號", lat: 25.0835, lng: 121.5574 },
+            { id: 23, name: "士林官邸", rating: 4.4, type: "花園", isPaid: true, price: "$100", address: "台北市士林區福林路60號", lat: 25.0934, lng: 121.5308 },
+            { id: 24, name: "北投溫泉博物館", rating: 4.5, type: "博物館", isPaid: false, price: "免費", address: "台北市北投區中山路2號", lat: 25.1365, lng: 121.5065 },
+            { id: 25, name: "陽明山國家公園", rating: 4.6, type: "自然景觀", isPaid: false, price: "免費", address: "台北市北投區竹子湖路1-20號", lat: 25.1558, lng: 121.5477 },
+            { id: 26, name: "碧潭風景區", rating: 4.3, type: "自然景觀", isPaid: false, price: "免費", address: "新北市新店區新店路", lat: 24.9575, lng: 121.5372 },
+            { id: 27, name: "鶯歌陶瓷老街", rating: 4.3, type: "老街", isPaid: false, price: "免費", address: "新北市鶯歌區尖山埔路", lat: 24.9537, lng: 121.3485 },
+            { id: 28, name: "林本源園邸", rating: 4.4, type: "歷史地標", isPaid: true, price: "$80", address: "新北市板橋區西門街9號", lat: 25.0118, lng: 121.4549 },
+            { id: 29, name: "十分瀑布", rating: 4.5, type: "自然景觀", isPaid: true, price: "$100", address: "新北市平溪區乾坑10號", lat: 25.0494, lng: 121.7877 },
+            { id: 30, name: "野柳地質公園", rating: 4.5, type: "自然景觀", isPaid: true, price: "$120", address: "新北市萬里區港東路167-1號", lat: 25.2064, lng: 121.6905 },
+            { id: 31, name: "金山老街", rating: 4.2, type: "老街", isPaid: false, price: "免費", address: "新北市金山區金包里街", lat: 25.2217, lng: 121.6384 },
+            { id: 32, name: "四四南村", rating: 4.3, type: "文創園區", isPaid: false, price: "免費", address: "台北市信義區松勤街50號", lat: 25.0312, lng: 121.5619 },
+            { id: 33, name: "寶藏巖國際藝術村", rating: 4.4, type: "文創園區", isPaid: false, price: "免費", address: "台北市中正區汀州路三段230巷14弄2號", lat: 25.0107, lng: 121.5323 },
+            { id: 34, name: "大稻埕碼頭", rating: 4.5, type: "自然景觀", isPaid: false, price: "免費", address: "台北市大同區民生西路底", lat: 25.0569, lng: 121.5076 },
+            { id: 35, name: "板橋435藝文特區", rating: 4.3, type: "文創園區", isPaid: false, price: "免費", address: "新北市板橋區中正路435號", lat: 25.0253, lng: 121.4533 }
         ];
 
-        // --- 2. Application Logic (應用程式邏輯) ---
-        
-        const app = {
-            userPos: { lat: MOCK_BASE_LAT, lng: MOCK_BASE_LNG }, // Default fallback
-            currentRadius: 5,
-            minRating: 3.8,
+        const attractionApp = {
+            userPos: { lat: 25.0478, lng: 121.5170 },
+            currentRadius: 30, minRating: 3.8, currentDistrict: 'all',
 
             init() {
                 this.cacheDOM();
                 this.bindEvents();
                 this.refreshLocation();
-                
-                // Initialize Lucide icons
-                lucide.createIcons();
             },
-
             cacheDOM() {
                 this.dom = {
+                    districtInput: document.getElementById('district-input'),
                     radiusInput: document.getElementById('radius-input'),
-                    radiusVal: document.getElementById('radius-val'),
                     ratingInput: document.getElementById('rating-input'),
                     listPaid: document.getElementById('list-paid'),
                     listFree: document.getElementById('list-free'),
@@ -209,166 +1012,88 @@
                     gpsStatus: document.getElementById('gps-status')
                 };
             },
-
             bindEvents() {
-                this.dom.radiusInput.addEventListener('input', (e) => {
-                    this.currentRadius = parseInt(e.target.value);
-                    this.dom.radiusVal.textContent = `${this.currentRadius} km`;
+                this.dom.districtInput.addEventListener('change', (e) => {
+                    this.currentDistrict = e.target.value;
                     this.render();
                 });
-
+                this.dom.radiusInput.addEventListener('change', (e) => {
+                    this.currentRadius = parseFloat(e.target.value);
+                    this.render();
+                });
                 this.dom.ratingInput.addEventListener('change', (e) => {
                     this.minRating = parseFloat(e.target.value);
                     this.render();
                 });
             },
-
             refreshLocation() {
-                this.dom.gpsStatus.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> 定位中...';
-                lucide.createIcons();
-
+                this.dom.gpsStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 定位中...';
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            this.userPos = {
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                            };
-                            this.dom.gpsStatus.innerHTML = '<i data-lucide="map-pin" class="w-3 h-3 text-green-600"></i> 定位成功';
-                            this.render();
-                            lucide.createIcons();
-                        },
-                        (error) => {
-                            console.warn("Geolocation denied or failed, using default mockup location.", error);
-                            this.dom.gpsStatus.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 text-orange-500"></i> 使用模擬位置 (台北)';
-                            // In a real app, we might reset to a default center, keeping current mock center for demo
-                            this.render();
-                            lucide.createIcons();
-                        }
+                        (p) => { this.userPos = { lat: p.coords.latitude, lng: p.coords.longitude }; this.dom.gpsStatus.innerHTML = '<i class="fas fa-map-marker-alt text-green-600"></i> 定位成功'; this.render(); },
+                        (e) => { this.dom.gpsStatus.innerHTML = '<i class="fas fa-exclamation-circle text-orange-500"></i> 模擬位置'; this.render(); }
                     );
-                } else {
-                    this.dom.gpsStatus.innerHTML = '瀏覽器不支援定位';
-                    this.render();
                 }
             },
-
-            // Haversine formula to calculate distance in km
             calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; // Radius of the earth in km
-                const dLat = this.deg2rad(lat2 - lat1);
-                const dLon = this.deg2rad(lon2 - lon1);
-                const a =
-                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                const d = R * c; // Distance in km
-                return d;
+                return parseFloat(calculateHaversineDistance(lat1, lon1, lat2, lon2));
             },
-
-            deg2rad(deg) {
-                return deg * (Math.PI / 180);
-            },
-
-            formatDistance(km) {
-                if (km < 1) {
-                    return `${Math.round(km * 1000)} m`;
-                }
-                return `${km.toFixed(1)} km`;
-            },
-
             render() {
-                // 1. Process Data: Calculate distance, Filter, Sort
+                // 1. 基本資料處理：計算距離
                 const processedData = POI_DATABASE.map(place => {
                     const dist = this.calculateDistance(this.userPos.lat, this.userPos.lng, place.lat, place.lng);
                     return { ...place, distance: dist };
+                });
+
+                // 2. 篩選邏輯 (距離 + 評分 + 行政區)
+                const filteredData = processedData.filter(place => {
+                    const matchDist = place.distance <= this.currentRadius;
+                    const matchRating = place.rating >= this.minRating;
+                    const matchDistrict = this.currentDistrict === 'all' || place.address.includes(this.currentDistrict);
+
+                    return matchDist && matchRating && matchDistrict;
                 })
-                .filter(place => place.distance <= this.currentRadius && place.rating >= this.minRating)
-                .sort((a, b) => b.rating - a.rating); // Sort by rating descending
+                    .sort((a, b) => a.distance - b.distance);
 
-                // 2. Split Categories
-                const paidPlaces = processedData.filter(p => p.isPaid).slice(0, 10); // Top 10
-                const freePlaces = processedData.filter(p => !p.isPaid).slice(0, 10); // Top 10
+                // 3. 分類顯示 (付費/免費)，上限調整為 30 筆
+                const paidPlaces = filteredData.filter(p => p.isPaid).slice(0, 30);
+                const freePlaces = filteredData.filter(p => !p.isPaid).slice(0, 30);
 
-                // 3. Update Counts
                 this.dom.countPaid.textContent = paidPlaces.length;
                 this.dom.countFree.textContent = freePlaces.length;
-
-                // 4. Generate HTML
-                this.dom.listPaid.innerHTML = paidPlaces.length ? paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('') : this.getEmptyHTML();
-                this.dom.listFree.innerHTML = freePlaces.length ? freePlaces.map(p => this.createCardHTML(p, 'free')).join('') : this.getEmptyHTML();
-
-                // Re-init icons for new content
-                lucide.createIcons();
+                this.dom.listPaid.innerHTML = paidPlaces.length ? paidPlaces.map(p => this.createCardHTML(p, 'paid')).join('') : '<p class="text-gray-400 text-center py-4">無符合條件的景點</p>';
+                this.dom.listFree.innerHTML = freePlaces.length ? freePlaces.map(p => this.createCardHTML(p, 'free')).join('') : '<p class="text-gray-400 text-center py-4">無符合條件的景點</p>';
             },
-
             createCardHTML(place, type) {
                 const isPaid = type === 'paid';
-                const borderColor = isPaid ? 'border-amber-200 hover:border-amber-400' : 'border-emerald-200 hover:border-emerald-400';
-                const bgColor = isPaid ? 'bg-white' : 'bg-white';
-                const badgeColor = isPaid ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
-                const btnColor = isPaid ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700';
-                const icon = isPaid ? 'ticket' : 'trees';
-                
-                // Google Maps Navigation URL
-                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+                const borderColor = isPaid ? 'border-amber-200 hover:border-amber-300' : 'border-emerald-200 hover:border-emerald-300';
+                const btnColor = 'bg-blue-600 hover:bg-blue-700 text-white';
+                const icon = isPaid ? 'fa-ticket-alt' : 'fa-tree';
 
                 return `
-                    <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 ${borderColor} ${bgColor} shadow-sm transition-all duration-200">
+                    <div class="card-hover relative flex flex-col p-4 rounded-xl border-2 ${borderColor} bg-white shadow-sm transition-all duration-200">
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h3 class="font-bold text-gray-800 text-lg leading-tight">${place.name}</h3>
-                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1">
-                                    <i data-lucide="${icon}" class="w-3 h-3 mr-1"></i> ${place.type}
-                                </span>
+                                <span class="inline-flex items-center text-xs font-medium text-gray-500 mt-1"><i class="fas ${icon} mr-1"></i> ${place.type}</span>
                             </div>
                             <div class="flex items-center bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
-                                <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-current mr-1"></i>
-                                <span class="font-bold text-gray-700 text-sm">${place.rating}</span>
+                                <i class="fas fa-star text-yellow-400 text-sm mr-1"></i><span class="font-bold text-gray-700 text-sm">${place.rating}</span>
                             </div>
                         </div>
-                        
                         <div class="mt-2 text-sm text-gray-600 space-y-2">
-                            <div class="flex items-center">
-                                <i data-lucide="banknote" class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"></i>
-                                <span class="${isPaid ? 'font-medium text-gray-800' : 'text-emerald-600 font-medium'}">
-                                    ${place.price}
-                                </span>
-                            </div>
-                            <div class="flex items-start">
-                                <i data-lucide="map-pin" class="w-4 h-4 mr-2 opacity-70 mt-0.5 flex-shrink-0"></i>
-                                <span class="text-xs text-gray-500 line-clamp-1" title="${place.address}">${place.address}</span>
-                            </div>
-                            <div class="flex items-center">
-                                <i data-lucide="route" class="w-4 h-4 mr-2 opacity-70 flex-shrink-0"></i>
-                                <span>距離: <strong>${this.formatDistance(place.distance)}</strong></span>
-                            </div>
+                            <div class="flex items-center"><i class="fas fa-money-bill-wave w-5 text-center mr-1 opacity-70"></i><span class="${isPaid ? 'font-medium text-gray-800' : 'text-emerald-600 font-medium'}">${place.price}</span></div>
+                            <div class="flex items-start"><i class="fas fa-map-marker-alt w-5 text-center mr-1 opacity-70 mt-0.5"></i><span class="text-xs text-gray-500 line-clamp-1">${place.address}</span></div>
+                            <div class="flex items-center"><i class="fas fa-route w-5 text-center mr-1 opacity-70"></i><span>距離: <strong>${place.distance} km</strong></span></div>
                         </div>
-
                         <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                             <span class="text-xs text-gray-400">#${type === 'paid' ? '付費景點' : '免費景點'}</span>
-                             <a href="${navUrl}" target="_blank" class="${btnColor} text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">
-                                導航 <i data-lucide="navigation" class="w-3 h-3 ml-2"></i>
-                             </a>
+                             <span class="text-xs text-gray-400">#${type === 'paid' ? '付費' : '免費'}</span>
+                             <a href="https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}" target="_blank" class="${btnColor} text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm hover:shadow-md transition-all">導航 <i class="fas fa-location-arrow ml-2"></i></a>
                         </div>
-                    </div>
-                `;
-            },
-
-            getEmptyHTML() {
-                return `
-                    <div class="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
-                        <p class="text-gray-400 text-sm">無符合條件的景點</p>
-                    </div>
-                `;
+                    </div>`;
             }
         };
-
-        // Start App
-        document.addEventListener('DOMContentLoaded', () => {
-            app.init();
-        });
-
     </script>
 </body>
+
 </html>
